@@ -15,7 +15,11 @@ cp ./out/externalfeatures.js cobscanner/
 cp ./out/filesourcehandler.js cobscanner/
 cp ./out/cobolglobalcache.js cobscanner/
 cp ./out/cobolsourcescanner.js cobscanner/
+cp ./out/cobolworkspacecache.js cobscanner/
+cp ./out/cobapi.js cobscanner/
+cp ./out/cobapiimpl.js cobscanner/
 cp -r ./out/keywords cobscanner/
+
 cd cobscanner
 export npm_config_loglevel=silent
 npm init -y >/dev/null
@@ -36,3 +40,6 @@ else
  exit 1
 fi
 rm package.json package-lock.json
+
+cd ../src
+zip ../sdk.zip cobapi.ts

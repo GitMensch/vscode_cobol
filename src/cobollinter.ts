@@ -239,7 +239,7 @@ export class CobolLinterProvider {
                 if (sourceRefs.targetReferences.has(workLower) === false) {
                     let ignore = false;
                     if (this.settings.linter_ignore_section_before_entry) {
-                        const nextLine = qp.sourceHandler.getLine(1 + token.startLine);
+                        const nextLine = qp.sourceHandler.getLine(1 + token.startLine, false);
                         if (nextLine?.toLocaleLowerCase().indexOf("entry") !== -1) {
                             ignore = true;
                         }
@@ -275,7 +275,7 @@ export class CobolLinterProvider {
 
         // cache current document, interactive search to be faster
         if (this.current === undefined || this.currentVersion !== document.version) {
-            this.current = VSCOBOLSourceScanner.getCachedObject(document);
+            this.current = VSCOBOLSourceScanner.getCachedObject(document, this.settings);
             this.sourceRefs = this.current?.sourceReferences;
             this.currentVersion = document.version;
             return true;

@@ -1,15 +1,22 @@
 import path from "path";
 import fs from 'fs';
+
 import { extensions, FileType, Uri, workspace } from "vscode";
 import { getWorkspaceFolders } from "./cobolfolders";
-import { ScanData, ScanDataHelper } from "./cobscannerdata";
+import { COBSCANNER_ADDFILE, COBSCANNER_SENDCLASS, COBSCANNER_SENDENUM, COBSCANNER_SENDEP, COBSCANNER_SENDINTERFACE, COBSCANNER_SENDPRGID, COBSCANNER_STATUS, ScanData, ScanDataHelper } from "./cobscannerdata";
 import { VSCOBOLConfiguration } from "./configuration";
-import { logChannelHide, logChannelSetPreserveFocus, logException, logMessage, progressStatusBarItem } from "./extension";
+import { COBOLStatUtils, logChannelHide, logChannelSetPreserveFocus, logException, logMessage, progressStatusBarItem } from "./extension";
 import { ICOBOLSettings } from "./iconfiguration";
 import { COBOLFileUtils } from "./opencopybook";
 import VSCOBOLSourceScanner from "./vscobolscanner";
 import { fork, ForkOptions } from 'child_process';
-import { GlobalCachesHelper } from "./globalcachehelper";
+import { COBOLWorkspaceSymbolCacheHelper, TypeCategory } from "./cobolworkspacecache";
+import { COBOLUtils } from "./cobolutils";
+import tempDirectory from 'temp-dir';
+import { InMemoryGlobalCacheHelper } from "./globalcachehelper";
+import { COBOLWorkspaceFile } from "./cobolglobalcache";
+import { COBOLSourceScannerUtils } from "./cobolsourcescannerutils";
+
 
 class ScanStats {
     parentPid = 0;
@@ -35,13 +42,24 @@ export class VSCobScanner {
             return;
         }
 
+        // cleanup old sym files
+        const cacheDirectory = VSCOBOLSourceScanner.getCacheDirectory();
+        if (cacheDirectory !== undefined) {
+            COBOLSourceScannerUtils.cleanUpOldMetadataFiles(settings, cacheDirectory);
+        }
+
         if (COBOLFileUtils.isValidCopybookExtension(fsPath, settings) || COBOLFileUtils.isValidProgramExtension(fsPath, settings)) {
+            COBOLUtils.saveGlobalCacheToWorkspace(settings,false);
             const sf = new ScanData();
             sf.showStats = false;
             sf.Files.push(fsPath);
             sf.parse_copybooks_for_references = settings.parse_copybooks_for_references;
             sf.showMessage = settings.cache_metadata_show_progress_messages;
-            await this.forkScanner(sf, "OnSave");
+            sf.md_symbols = settings.metadata_symbols;
+            sf.md_entrypoints = settings.metadata_entrypoints;
+            sf.md_types = settings.metadata_types;
+            sf.md_metadata_files = settings.metadata_files;
+            await this.forkScanner(settings, sf, "OnSave", true);
         }
     }
 
@@ -69,7 +87,7 @@ export class VSCobScanner {
         }
     }
 
-    private static removeScannerFile(cacheDirectory: string):void {
+    private static removeScannerFile(cacheDirectory: string): void {
         const jsonFile = path.join(cacheDirectory, ScanDataHelper.scanFilename);
         try {
             fs.unlinkSync(jsonFile);
@@ -95,94 +113,152 @@ export class VSCobScanner {
         return this.isAlive(VSCobScanner.activePid);
     }
 
-    public static async forkScanner(sf: ScanData, reason: string): Promise<void> {
-        const cacheDirectory = VSCOBOLSourceScanner.getCacheDirectory();
-        if (cacheDirectory !== undefined) {
-            sf.cacheDirectory = cacheDirectory;
-            ScanDataHelper.save(cacheDirectory, sf);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    public static async forkScanner(settings: ICOBOLSettings, sf: ScanData, reason: string, deprecatedMode: boolean): Promise<void> {
+        ScanDataHelper.save(tempDirectory, sf);
 
-            const jcobscanner_js = path.join(VSCobScanner.scannerBinDir, "cobscanner.js");
-            const jsonFile = path.join(cacheDirectory, ScanDataHelper.scanFilename);
+        const jcobscanner_js = path.join(VSCobScanner.scannerBinDir, "cobscanner.js");
+        const jsonFile = path.join(tempDirectory, ScanDataHelper.scanFilename);
 
-            const options: ForkOptions = {
-                stdio: [0, 1, 2, "ipc"],
-                cwd: VSCobScanner.scannerBinDir
-            };
+        const options: ForkOptions = {
+            stdio: [0, 1, 2, "ipc"],
+            cwd: VSCobScanner.scannerBinDir
+        };
 
-            const child = fork(jcobscanner_js, [jsonFile], options);
+        const child = fork(jcobscanner_js, [jsonFile], options);
+        if (child == undefined) {
+            return;
+        }
 
-            VSCobScanner.activePid = child.pid;
+        VSCobScanner.activePid = child.pid;
 
-            child.on('error', err => {
-                VSCobScanner.removeScannerFile(cacheDirectory);
-                logException(`Fork caused ${reason}`, err);
-            });
+        child.on('error', err => {
+            if (tempDirectory !== undefined) {
+                VSCobScanner.removeScannerFile(tempDirectory);
+            }
+            logException(`Fork caused ${reason}`, err);
+        });
 
-            child.on('exit', code => {
-                VSCobScanner.activePid = 0;
-                if (code !== 0) {
-                    if (sf.showMessage) {
-                        logMessage(`External scan completed [Exit Code=${code}/${reason}]`);
-                    }
-                } else {
-                    GlobalCachesHelper.loadGlobalSymbolCache(cacheDirectory);
-                    progressStatusBarItem.hide();
+        child.on('exit', code => {
+            VSCobScanner.activePid = 0;
+            if (code !== 0) {
+                if (sf.showMessage) {
+                    logMessage(`External scan completed [Exit Code=${code}/${reason}]`);
                 }
-            });
+            } else {
+                progressStatusBarItem.hide();
+            }
+            COBOLUtils.saveGlobalCacheToWorkspace(settings);
+        });
 
-            let prevPercent = 0;
-            child.on('message', (msg) => {
-                const message = msg as string;
-                if (message.startsWith("@@STATUS")) {
+        let prevPercent = 0;
+        child.on('message', (msg) => {
+            const message = msg as string;
+            if (message.startsWith("@@")) {
+                if (message.startsWith(COBSCANNER_STATUS)) {
                     const args = message.split(" ");
                     progressStatusBarItem.show();
-                    const a1 = Number.parseInt(args[1]);
-                    const a2 = Number.parseInt(args[2]);
+                    const a1 = Number.parseInt(args[1], 10);
+                    const a2 = Number.parseInt(args[2], 10);
                     const percent = ((a1 / a2) * 100) | 0;
                     if (prevPercent !== percent) {
                         progressStatusBarItem.text = `Processing metadata: ${percent}%`;
                         prevPercent = percent;
                     }
-                } else {
-                    logMessage(msg as string);
                 }
-            });
-
-            if (child.stdout !== null) {
-                for await (const data of child.stdout) {
-                    // compress the output
-                    const lines: string = data.toString();
-                    for (const line of lines.split("\n")) {
-                        const lineTrimmed = line.trim();
-                        if (lineTrimmed.length !== 0) {
-                            logMessage(` ${line}`);
+                else if (message.startsWith(COBSCANNER_SENDEP)) {
+                    const args = message.split(",");
+                    const tokenName = args[1];
+                    const tokenLine = Number.parseInt(args[2], 10);
+                    const tokenFilename = args[3];
+                    COBOLWorkspaceSymbolCacheHelper.addEntryPoint(tokenFilename, tokenName, tokenLine);
+                }
+                else if (message.startsWith(COBSCANNER_SENDPRGID)) {
+                    const args = message.split(",");
+                    const tokenName = args[1];
+                    const tokenLine = Number.parseInt(args[2], 10);
+                    const tokenFilename = args[3];
+                    COBOLWorkspaceSymbolCacheHelper.removeAllProgramEntryPoints(tokenFilename);
+                    COBOLWorkspaceSymbolCacheHelper.removeAllTypes(tokenFilename);
+                    COBOLWorkspaceSymbolCacheHelper.addSymbol(tokenFilename, tokenName, tokenLine);
+                }
+                else if (message.startsWith(COBSCANNER_SENDCLASS)) {
+                    const args = message.split(",");
+                    const tokenName = args[1];
+                    const tokenLine = Number.parseInt(args[2], 10);
+                    const tokenFilename = args[3];
+                    COBOLWorkspaceSymbolCacheHelper.addClass(tokenFilename, tokenName, tokenLine, TypeCategory.ClassId);
+                }
+                else if (message.startsWith(COBSCANNER_SENDINTERFACE)) {
+                    const args = message.split(",");
+                    const tokenName = args[1];
+                    const tokenLine = Number.parseInt(args[2], 10);
+                    const tokenFilename = args[3];
+                    COBOLWorkspaceSymbolCacheHelper.addClass(tokenFilename, tokenName, tokenLine, TypeCategory.InterfaceId);
+                }
+                else if (message.startsWith(COBSCANNER_SENDENUM)) {
+                    const args = message.split(",");
+                    const tokenName = args[1];
+                    const tokenLine = Number.parseInt(args[2], 10);
+                    const tokenFilename = args[3];
+                    COBOLWorkspaceSymbolCacheHelper.addClass(tokenFilename, tokenName, tokenLine, TypeCategory.EnumId);
+                } else if (message.startsWith(COBSCANNER_ADDFILE)) {
+                    const args = message.split(",");
+                    const ms = BigInt(args[1]);
+                    const fullFilename = args[2];
+                    const shortFilename = COBOLStatUtils.getShortWorkspaceFilename(fullFilename);
+                    if (shortFilename !== undefined) {
+                        const cws = new COBOLWorkspaceFile(ms, shortFilename);
+                        if (fullFilename !== undefined) {
+                            InMemoryGlobalCacheHelper.addFilename(fullFilename, cws);
+                            COBOLWorkspaceSymbolCacheHelper.removeAllProgramEntryPoints(shortFilename);
                         }
+                    }
+                }
+            } else {
+                logMessage(msg as string);
+            }
+        });
+
+        if (child.stdout !== null) {
+            for await (const data of child.stdout) {
+                // compress the output
+                const lines: string = data.toString();
+                for (const line of lines.split("\n")) {
+                    const lineTrimmed = line.trim();
+                    if (lineTrimmed.length !== 0) {
+                        logMessage(` ${line}`);
                     }
                 }
             }
         }
     }
 
-    public static async processAllFilesInWorkspaceOutOfProcess(viaCommand: boolean): Promise<void> {
-        const msgViaCommand = "(" + (viaCommand ? "on demand" : "startup") + ")";
-        if (VSCOBOLConfiguration.isOnDiskCachingEnabled() === false) {
-            logMessage(`Metadata cache is off, no action taken ${msgViaCommand}`);
-            return;
-        }
+    public static async processAllFilesInWorkspaceOutOfProcess(viaCommand: boolean, deprecatedMode: boolean): Promise<void> {
 
-        const cacheDirectory = VSCOBOLSourceScanner.getCacheDirectory();
-        if (cacheDirectory !== undefined && VSCobScanner.IsScannerActive(cacheDirectory)) {
-            if (!viaCommand) {
-                logMessage(`Source scanner lock file is present on startup ${msgViaCommand}`);
-                VSCobScanner.removeScannerFile(cacheDirectory);
-                logMessage(` - lock file released`);
-            } else {
-                logMessage(`Source scanner already active, no action taken ${msgViaCommand}`);
+        const msgViaCommand = "(" + (viaCommand ? "on demand" : "startup") + ")";
+        const settings = VSCOBOLConfiguration.get();
+
+        if (deprecatedMode) {
+            if (VSCOBOLConfiguration.isOnDiskCachingEnabled() === false) {
+                logMessage(`Metadata cache is off, no action taken ${msgViaCommand}`);
                 return;
+            }
+
+            const cacheDirectory = VSCOBOLSourceScanner.getCacheDirectory();
+            if (cacheDirectory !== undefined && VSCobScanner.IsScannerActive(cacheDirectory)) {
+                COBOLSourceScannerUtils.cleanUpOldMetadataFiles(settings, cacheDirectory);
+                if (!viaCommand) {
+                    logMessage(`Source scanner lock file is present on startup ${msgViaCommand}`);
+                    VSCobScanner.removeScannerFile(cacheDirectory);
+                    logMessage(` - lock file released`);
+                } else {
+                    logMessage(`Source scanner already active, no action taken ${msgViaCommand}`);
+                    return;
+                }
             }
         }
 
-        const settings = VSCOBOLConfiguration.get();
         const ws = getWorkspaceFolders();
         const stats = new ScanStats();
         const files: string[] = [];
@@ -211,6 +287,7 @@ export class VSCobScanner {
 
         }
 
+        COBOLUtils.saveGlobalCacheToWorkspace(settings, false);
         const sf = new ScanData();
         sf.directoriesScanned = stats.directoriesScanned;
         sf.maxDirectoryDepth = stats.maxDirectoryDepth;
@@ -219,11 +296,22 @@ export class VSCobScanner {
         sf.parse_copybooks_for_references = settings.parse_copybooks_for_references;
         sf.Files = files;
         sf.showMessage = settings.cache_metadata_show_progress_messages;
+        sf.md_symbols = settings.metadata_symbols;
+        sf.md_entrypoints = settings.metadata_entrypoints;
+        sf.md_metadata_files = settings.metadata_files;
         for (const [, uri] of stats.directoriesScannedMap) {
             sf.Directories.push(uri.fsPath);
         }
 
-        await VSCobScanner.forkScanner(sf, msgViaCommand);
+        if (ws !== undefined) {
+            for (const f of ws) {
+                if (f !== undefined && f.uri.scheme === 'file') {
+                    sf.workspaceFolders.push(f.uri.fsPath);
+                }
+            }
+        }
+
+        await VSCobScanner.forkScanner(settings, sf, msgViaCommand, deprecatedMode);
     }
 
     private static async generateCOBScannerData(settings: ICOBOLSettings, folder: Uri, stats: ScanStats, files2scan: string[]): Promise<boolean> {
@@ -308,4 +396,6 @@ export class VSCobScanner {
 
         return true;
     }
+
+
 }

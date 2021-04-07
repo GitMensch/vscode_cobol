@@ -1,11 +1,13 @@
 # exit on error
 set -e
 PACKAGE_VERSION=$(node -p -e "require('./package.json').version")
-
-npx git-changelog-command-line --to-ref refs/heads/main --ignore-commits-without-issue -std -tec "
+# --ignore-commits-without-issue
+npx git-changelog-command-line --to-ref refs/heads/main \
+--ignore-pattern "^\[maven-release-plugin\].*|^\[Gradle Release Plugin\].*|^Merge.*|^bump.*" \
+--no-issue-name "" -std -tec "
 # Changelog
 
-Changelog for {{ownerName}} {{repoName}}.
+Changelog for {{ownerName}}{{repoName}}.
 
 {{#tags}}
 ## {{name}}
@@ -18,9 +20,6 @@ Changelog for {{ownerName}} {{repoName}}.
 ### {{name}} {{issue}} {{title}} {{#hasIssueType}} *{{issueType}}* {{/hasIssueType}} {{#hasLabels}} {{#labels}} *{{.}}* {{/labels}} {{/hasLabels}}
    {{/hasLink}}
   {{/hasIssue}}
-  {{^hasIssue}}
-### {{name}}
-  {{/hasIssue}}
 
   {{#commits}}
 **{{{messageTitle}}}**
@@ -28,8 +27,7 @@ Changelog for {{ownerName}} {{repoName}}.
 {{#messageBodyItems}}
  * {{.}}
 {{/messageBodyItems}}
-
-[{{hash}}](https://github.com/{{ownerName}}/{{repoName}}/commit/{{hash}}) *{{commitTime}}*
+* [{{hash}}](https://github.com/{{ownerName}}/{{repoName}}/commit/{{hash}}) *{{commitTime}}*
 
   {{/commits}}
 

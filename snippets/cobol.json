@@ -83,6 +83,38 @@
 		"description": "COPY REPLACING",
 		"scope": "cobol,acucobol"
 	},
+	"delimited": {
+		"prefix": "delimited by size",
+		"body" : [
+			"delimited by size"
+		],
+		"description": "delimited by size (string)",
+		"scope": "cobol,acucobol"
+	},
+	"DELIMITED": {
+		"prefix": "DELIMITED BY SIZE",
+		"body" : [
+			"DELIMITED BY SIZE"
+		],
+		"description": "DELIMITED BY SIZE (string)",
+		"scope": "cobol,acucobol"
+	},
+	"delimited_space": {
+		"prefix": "delimited by space",
+		"body" : [
+			"delimited by space"
+		],
+		"description": "delimited by size (string)",
+		"scope": "cobol,acucobol"
+	},
+	"DELIMITED_SPACE": {
+		"prefix": "DELIMITED BY SPACE",
+		"body" : [
+			"DELIMITED BY SPACE"
+		],
+		"description": "DELIMITED BY SPACE (string)",
+		"scope": "cobol,acucobol"
+	},
 	"divide": {
 		"prefix": "divide",
 		"body": [
@@ -565,6 +597,22 @@
 			""
 		],
 		"description": "Minimum template",
+		"scope": "cobol"
+	},
+	"END PROGRAM": {
+		"prefix": "END PROGRAM",
+		"body": [
+			"END PROGRAM ${1:${TM_FILENAME/(.*)\\..+$/$1/}}."
+		],
+		"description": "END PROGRAM prg.",
+		"scope": "cobol"
+	},
+	"end program": {
+		"prefix": "end program",
+		"body": [
+			"end program ${1:${TM_FILENAME/(.*)\\..+$/$1/}}."
+		],
+		"description": "end program ${1:${TM_FILENAME/(.*)\\..+$/$1/}}.",
 		"scope": "cobol"
 	},
 	"property": {
@@ -2164,7 +2212,7 @@
 		"scope": "cobol"
 	},
 	"PROGRAM-ID": {
-		"prefix": "PROGRAM ID.",
+		"prefix": "PROGRAM-ID. PRG.",
 		"body": [
 			"PROGRAM-ID. ${1:${TM_FILENAME/(.*)\\..+$/${1:/upcase}/}}.",
 			"$0"
@@ -2172,7 +2220,7 @@
 		"scope": "cobol"
 	},
 	"program-id": {
-		"prefix": "program id. ",
+		"prefix": "program-id. prg.",
 		"body": [
 			"program-id. ${1:${TM_FILENAME/(.*)\\..+$/$1/}}.",
 			"$0"

@@ -1,6 +1,7 @@
-import ISourceHandler, { ICommentCallback } from './isourcehandler';
 import * as vscode from 'vscode';
+import ISourceHandler, { ICommentCallback } from './isourcehandler';
 import { cobolKeywordDictionary } from './keywords/cobolKeywords';
+import { COBOLStatUtils } from './extension';
 
 export class VSCodeSourceHandler implements ISourceHandler {
     commentCount: number;
@@ -8,6 +9,10 @@ export class VSCodeSourceHandler implements ISourceHandler {
     dumpNumbersInAreaA: boolean;
     dumpAreaBOnwards: boolean;
     commentCallback?: ICommentCallback;
+    lineCount: number;
+    documentVersionId: BigInt;
+    isSourceInWorkSpace: boolean;
+    shortWorkspaceFilename: string;
 
     public constructor(document: vscode.TextDocument, dumpNumbersInAreaA: boolean, commentCallback?: ICommentCallback) {
         this.document = document;
@@ -15,10 +20,23 @@ export class VSCodeSourceHandler implements ISourceHandler {
         this.dumpAreaBOnwards = false;
         this.commentCount = 0;
         this.commentCallback = commentCallback;
+        this.lineCount = this.document.lineCount;
+        this.documentVersionId = BigInt(this.document.version);
+        const workspaceFilename = COBOLStatUtils.getShortWorkspaceFilename(document.fileName);
+        this.shortWorkspaceFilename = workspaceFilename === undefined ? "" : workspaceFilename;
+        this.isSourceInWorkSpace = this.shortWorkspaceFilename.length !== 0;
+    }
+
+    getDocumentVersionId(): BigInt {
+        return this.documentVersionId;
+    }
+
+    getUriAsString(): string {
+        return this.document.uri.toString();
     }
 
     getLineCount(): number {
-        return this.document.lineCount;
+        return this.lineCount;
     }
 
     getCommentCount(): number {
@@ -33,15 +51,19 @@ export class VSCodeSourceHandler implements ISourceHandler {
         }
     }
 
-    getLine(lineNumber: number): string|undefined {
+    getLine(lineNumber: number, raw: boolean): string|undefined {
 
-        if (lineNumber >= this.document.lineCount) {
+        if (lineNumber >= this.lineCount) {
             return undefined;
         }
 
         const lineText = this.document.lineAt(lineNumber);
 
         let line = lineText.text;
+
+        if (raw) {
+            return line;
+        }
 
         const startComment = line.indexOf("*>");
         if (startComment !== -1) {
@@ -56,7 +78,7 @@ export class VSCodeSourceHandler implements ISourceHandler {
             return "";
         }
         // drop fixed format line
-        if (line.length > 7 && line[6] === '*') {
+        if (line.length >= 7 && line[6] === '*') {
             this.commentCount++;
             this.sendCommentCallback(line, lineNumber);
             return "";
@@ -108,5 +130,13 @@ export class VSCodeSourceHandler implements ISourceHandler {
 
     resetCommentCount():void {
         this.commentCount = 0;
+    }
+
+    getIsSourceInWorkSpace():boolean {
+        return this.isSourceInWorkSpace;
+    }
+
+    getShortWorkspaceFilename(): string {
+        return this.shortWorkspaceFilename;
     }
 }

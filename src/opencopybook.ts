@@ -1,13 +1,12 @@
 'use strict';
 
-import { Range, TextDocument, Definition, Position, CancellationToken, Uri } from 'vscode';
-import * as vscode from 'vscode';
 import * as path from 'path';
-import * as process from 'process';
-import { getCombinedCopyBookSearchPath, COBOLStatUtils} from './extension';
+
+import * as vscode from 'vscode';
+import { Range, TextDocument, Definition, Position, CancellationToken, Uri } from 'vscode';
+import { getCombinedCopyBookSearchPath, COBOLStatUtils } from './extension';
 import { VSCOBOLConfiguration } from './configuration';
 import { COBOLSettings, ICOBOLSettings } from './iconfiguration';
-
 
 export class COBOLFileUtils {
     static readonly isWin32 = process.platform === "win32";
@@ -169,20 +168,34 @@ export class COBOLCopyBookProvider implements vscode.DefinitionProvider {
         const line = doc.lineAt(pos);
         const text = line.text;
         const textLower = text.toLowerCase().replace("\t", " ");
-        const filename = this.extractCopyBoolFilename(text);
-        let inPos = -1;
+        let filename = this.extractCopyBoolFilename(text);
+        let inOrOfPos = -1;
+
+        const activeTextEditor = vscode.window.activeTextEditor;
+        if (activeTextEditor && filename === undefined) {
+            const sel = activeTextEditor.selection;
+
+            const ran = new vscode.Range(sel.start, sel.end);
+            const textSelection = activeTextEditor.document.getText(ran);
+            if (textSelection !== undefined) {
+                filename = textSelection.trim();
+            }
+        }
 
         // leave asap
         if (filename === undefined) {
             return [];
         }
 
-        // exec sql include "has" in in the line.. so becareful
+        // exec sql include "has" in in the line.. so take care..
         if (textLower.indexOf("copy") !== -1) {
-            inPos = textLower.indexOf(" in ");
+            inOrOfPos = textLower.indexOf(" in ");
+            if (inOrOfPos === -1) {
+                inOrOfPos = textLower.indexOf(" of ");
+            }
         }
 
-        let inDirectory = inPos !== -1 ? text.substr(2 + inPos) : "";
+        let inDirectory = inOrOfPos !== -1 ? text.substr(2 + inOrOfPos) : "";
 
         if (inDirectory.length !== 0) {
             let inDirItems = inDirectory.trim();
@@ -213,6 +226,7 @@ export class COBOLCopyBookProvider implements vscode.DefinitionProvider {
         }
 
         return [];
+
     }
 
     public static expandLogicalCopyBookToFilenameOrEmpty(filename: string, inDirectory: string, config: ICOBOLSettings): string {

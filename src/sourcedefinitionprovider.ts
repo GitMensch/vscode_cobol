@@ -6,8 +6,6 @@ import { VSCOBOLConfiguration } from './configuration';
 import { cobolKeywordDictionary } from './keywords/cobolKeywords';
 import { ICOBOLSettings } from './iconfiguration';
 
-
-
 export class COBOLSourceDefinition implements vscode.DefinitionProvider {
 
     readonly sectionRegEx = new RegExp('[0-9a-zA-Z][a-zA-Z0-9-_]*');
@@ -30,7 +28,7 @@ export class COBOLSourceDefinition implements vscode.DefinitionProvider {
 
         const theline = document.lineAt(position.line).text;
         if (theline.match(/.*(perform|thru|go\s*to|until|varying).*$/i)) {
-            const qcp: COBOLSourceScanner | undefined = VSCOBOLSourceScanner.getCachedObject(document);
+            const qcp: COBOLSourceScanner | undefined = VSCOBOLSourceScanner.getCachedObject(document, settings);
             if (qcp === undefined) {
                 return locations;
             }
@@ -43,7 +41,7 @@ export class COBOLSourceDefinition implements vscode.DefinitionProvider {
         }
 
         if (theline.match(/.*(new\s*|type).*$/i)) {
-            const qcp: COBOLSourceScanner | undefined = VSCOBOLSourceScanner.getCachedObject(document);
+            const qcp: COBOLSourceScanner | undefined = VSCOBOLSourceScanner.getCachedObject(document, settings);
             if (qcp === undefined) {
                 return locations;
             }
@@ -56,7 +54,7 @@ export class COBOLSourceDefinition implements vscode.DefinitionProvider {
         }
 
         if (theline.match(/.*(invoke\s*|::)(.*$)/i)) {
-            const qcp: COBOLSourceScanner | undefined = VSCOBOLSourceScanner.getCachedObject(document);
+            const qcp: COBOLSourceScanner | undefined = VSCOBOLSourceScanner.getCachedObject(document, settings);
             if (qcp === undefined) {
                 return locations;
             }
@@ -68,7 +66,7 @@ export class COBOLSourceDefinition implements vscode.DefinitionProvider {
         }
 
         if (theline.match(/.*(call|cancel|chain).*$/i)) {
-            const qcp: COBOLSourceScanner | undefined = VSCOBOLSourceScanner.getCachedObject(document);
+            const qcp: COBOLSourceScanner | undefined = VSCOBOLSourceScanner.getCachedObject(document, settings);
             if (qcp === undefined) {
                 return locations;
             }
@@ -80,7 +78,7 @@ export class COBOLSourceDefinition implements vscode.DefinitionProvider {
         }
 
         /* is it a known variable? */
-        if (this.getVariableInCurrentDocument(locations, document, position)) {
+        if (this.getVariableInCurrentDocument(locations, document, position,settings)) {
             return locations;
         }
 
@@ -211,7 +209,7 @@ export class COBOLSourceDefinition implements vscode.DefinitionProvider {
         return cobolKeywordDictionary.has(keyword);
     }
 
-    private getVariableInCurrentDocument(locations: vscode.Location[], document: vscode.TextDocument, position: vscode.Position): boolean {
+    private getVariableInCurrentDocument(locations: vscode.Location[], document: vscode.TextDocument, position: vscode.Position, settings: ICOBOLSettings): boolean {
         const wordRange = document.getWordRangeAtPosition(position, this.variableRegEx);
         const word = wordRange ? document.getText(wordRange) : '';
         if (word === "") {
@@ -223,7 +221,7 @@ export class COBOLSourceDefinition implements vscode.DefinitionProvider {
             return false;
         }
 
-        const sf: COBOLSourceScanner | undefined = VSCOBOLSourceScanner.getCachedObject(document);
+        const sf: COBOLSourceScanner | undefined = VSCOBOLSourceScanner.getCachedObject(document, settings);
         if (sf === undefined) {
             return false;
         }
@@ -240,6 +238,13 @@ export class COBOLSourceDefinition implements vscode.DefinitionProvider {
             }
 
             switch (token.tokenType) {
+                case COBOLTokenStyle.Union:
+                    {
+                        const srange = new vscode.Position(token.startLine, token.startColumn);
+                        const uri = vscode.Uri.file(token.filename);
+                        locations.push(new vscode.Location(uri, srange));
+                        break;
+                    }
                 case COBOLTokenStyle.Constant:
                     {
                         const srange = new vscode.Position(token.startLine, token.startColumn);

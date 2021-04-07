@@ -1,13 +1,26 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 
+export class COBOLWorkspaceFile {
+    lastModifiedTime:BigInt;
+    workspaceFilename: string;
+
+    constructor(lastModifiedTime:BigInt, workspaceFilename: string) {
+        this.lastModifiedTime = lastModifiedTime;
+        this.workspaceFilename = workspaceFilename;
+    }
+}
+
 export class COBOLGlobalSymbolTable {
-    public lastModifiedTime = 0;
     public callableSymbols = new Map<string, COBOLFileSymbol[]>();
+    public entryPoints = new Map<string, COBOLFileSymbol[]>();
+
+    public types = new Map<string, COBOLFileSymbol[]>();
+    public interfaces = new Map<string, COBOLFileSymbol[]>();
+    public enums =  new Map<string, COBOLFileSymbol[]>();
+
     public isDirty = false;
-    public classSymbols = new Map<string, COBOLFileSymbol[]>();
-    public methodSymbols = new Map<string, COBOLFileSymbol[]>();
-    public sourceFilenameModified = new Map<string, number>();
+    public sourceFilenameModified = new Map<string, COBOLWorkspaceFile>();
 
     // eslint-disable-next-line @typescript-eslint/ban-types
     static fromJSON(d: Object): COBOLGlobalSymbolTable {
@@ -16,7 +29,7 @@ export class COBOLGlobalSymbolTable {
 }
 
 export class COBOLSymbolTable {
-    public lastModifiedTime = 0;
+    public lastModifiedTime:BigInt = BigInt("0");
     public fileName = "";
 
     public variableSymbols: Map<string, COBOLSymbol>;
@@ -34,12 +47,12 @@ export class COBOLSymbolTable {
 }
 
 export class COBOLFileSymbol {
-    public filename: string | undefined;
-    public lnum: number | undefined;
+    public filename: string;
+    public lnum: number;
 
     public constructor(symbol?: string, lineNumber?: number) {
-        this.filename = symbol;
-        this.lnum = lineNumber;
+        this.filename = symbol === undefined ? "" : symbol;
+        this.lnum = lineNumber === undefined ? 0 : lineNumber;
     }
 
     // eslint-disable-next-line @typescript-eslint/ban-types
@@ -62,8 +75,6 @@ export class COBOLSymbol {
     }
 }
 
-export const globalSymbolFilename = "globalsymbols.sym";
-export const fileSymbolFilename = "filesymbols.sym";
 
-export const InMemorySymbolCache: Map<string, COBOLSymbolTable> = new Map<string, COBOLSymbolTable>();
-export const InMemoryGlobalSymbolCache: COBOLGlobalSymbolTable = new COBOLGlobalSymbolTable();
+
+export const InMemoryFileSymbolCache: Map<string, COBOLSymbolTable> = new Map<string, COBOLSymbolTable>();

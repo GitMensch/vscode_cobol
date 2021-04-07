@@ -14,7 +14,6 @@ export enum formatOnReturn {
 }
 
 export interface ICOBOLSettings {
-    experimental_features: boolean;
     enable_tabstop: boolean;
     pre_parse_line_limit: number;
     ignorecolumn_b_onwards: boolean;
@@ -61,18 +60,29 @@ export interface ICOBOLSettings {
     sourceview_include_pli_files: boolean;
     sourceview_include_doc_files: boolean;
     sourceview_include_script_files: boolean;
+    sourceview_include_object_files: boolean;
 
     format_constants_to_uppercase: boolean;
     format_on_return:formatOnReturn;
     editor_maxTokenizationLineLength: number;
     init_required: boolean;
+
+    metadata_symbols: string[];
+    metadata_entrypoints: string[];
+    metadata_types: string[];
+    metadata_files: string[];
+    maintain_metadata_cache: boolean;
+    maintain_metadata_cache_single_folder: boolean;
+
+    preprocessor_extensions:string[];
+
+    enable_semantic_token_provider: boolean;
 }
 
 export class COBOLSettings implements ICOBOLSettings {
     public tabstops: number[];
     public copybookexts: string[];
     public copybooks_nested: boolean;
-    public experimental_features: boolean;
     public enable_tabstop: boolean;
     public pre_parse_line_limit: number;
     public ignorecolumn_b_onwards: boolean;
@@ -115,14 +125,23 @@ export class COBOLSettings implements ICOBOLSettings {
     public sourceview_include_pli_files: boolean;
     public sourceview_include_doc_files: boolean;
     public sourceview_include_script_files: boolean;
+    public sourceview_include_object_files: boolean;
     public format_on_return:formatOnReturn;
     public editor_maxTokenizationLineLength: number;
     public format_constants_to_uppercase: boolean;
-
     public init_required = true;
+    public metadata_symbols: string[];
+    public metadata_entrypoints: string[];
+    public metadata_types: string[];
+    public metadata_files: string[];
+    public maintain_metadata_cache: boolean;
+    public maintain_metadata_cache_single_folder: boolean;
+
+    public preprocessor_extensions: string[];
+
+    public enable_semantic_token_provider:boolean;
 
     constructor() {
-        this.experimental_features = false;
         this.enable_tabstop = true;
         this.pre_parse_line_limit = 25;
         this.ignorecolumn_b_onwards = false;
@@ -168,8 +187,17 @@ export class COBOLSettings implements ICOBOLSettings {
         this.sourceview_include_pli_files = true;
         this.sourceview_include_doc_files = true;
         this.sourceview_include_script_files = true;
+        this.sourceview_include_object_files = true;
         this.linter_ignore_section_before_entry = true;
         this.format_on_return = formatOnReturn.Off;
         this.format_constants_to_uppercase = true;
+        this.metadata_symbols = [];
+        this.metadata_entrypoints = [];
+        this.metadata_types = [];
+        this.preprocessor_extensions = [];
+        this.metadata_files = [];
+        this.maintain_metadata_cache = true;
+        this.maintain_metadata_cache_single_folder = false;
+        this.enable_semantic_token_provider = false;
     }
 }

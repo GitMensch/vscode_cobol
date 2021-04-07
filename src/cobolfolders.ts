@@ -1,8 +1,5 @@
 import { workspace, WorkspaceFolder } from "vscode";
 import { VSCOBOLConfiguration } from "./configuration";
-// import { logMessage } from "./extension";
-
-// let showMessages: boolean = true;
 
 export function getWorkspaceFolders(): ReadonlyArray<WorkspaceFolder> | undefined {
     const ws = workspace.workspaceFolders;
@@ -15,23 +12,18 @@ export function getWorkspaceFolders(): ReadonlyArray<WorkspaceFolder> | undefine
     // make a map of the folders
     const folderMap: Map<string, WorkspaceFolder> = new Map<string, WorkspaceFolder>();
     for (const folder of ws) {
-        if (folder.uri.scheme === 'file') {             // filter out anothing other than file related
+        if (folder.uri.scheme === 'file') {             // filter out another other than file related
             folderMap.set(folder.name, folder);
         }
-        // else {
-        //     if (showMessages) {
-        //         logMessage(`Ignoring ${folder.name} / ${folder.uri.fragment} @ ${folder.uri.scheme}`);
-        //     }
-        // }
     }
 
     const rwFolder: WorkspaceFolder[] = [];
     if (folders_order.length !== 0) {
-        for (const forder of folders_order) {
-            const f = folderMap.get(forder);
+        for (const folder of folders_order) {
+            const f = folderMap.get(folder);
             if (f !== undefined) {
                 rwFolder.push(f);
-                folderMap.delete(forder);
+                folderMap.delete(folder);
             }
         }
     }

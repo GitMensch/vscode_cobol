@@ -31,7 +31,7 @@ export class COBOLCaseFormatter implements OnTypeFormattingEditProvider{
         }
 
 
-        const current: COBOLSourceScanner | undefined = VSCOBOLSourceScanner.getCachedObject(document);
+        const current: COBOLSourceScanner | undefined = VSCOBOLSourceScanner.getCachedObject(document, settings);
         if (current === undefined) {
             return;
         }
@@ -53,11 +53,16 @@ export class COBOLCaseFormatter implements OnTypeFormattingEditProvider{
         }
         return [];
     }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     static register(): any {
-        const langPlusSchema = { scheme: 'file', language: 'COBOL' };
+        const langPlusSchemas = [
+            { scheme: 'file', language: 'COBOL' },
+            { scheme: 'file', language: 'COBOLIT' },
+            { scheme: 'file', language: 'ACUCOBOL' }
+        ];
 
-        return languages.registerOnTypeFormattingEditProvider(langPlusSchema, new COBOLCaseFormatter(), '\n');
+        return languages.registerOnTypeFormattingEditProvider(langPlusSchemas, new COBOLCaseFormatter(), '\n');
 
     }
 }

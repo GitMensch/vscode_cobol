@@ -1,21 +1,20 @@
 import COBOLSourceScanner, { SharedSourceReferences } from "./cobolsourcescanner";
 import { COBOLSymbolTableEventHelper } from "./cobolsymboltableeventhelper";
-import { ScanDataHelper, ScanStats } from "./cobscannerdata";
+import { COBSCANNER_STATUS, ScanDataHelper, ScanStats } from "./cobscannerdata";
 import { ConsoleExternalFeatures } from "./consoleexternalfeatures";
-
-import { IExternalFeatures } from "./externalfeatures";
-import { FileSourceHandler } from "./filesourcehandler";
-import { GlobalCachesHelper } from "./globalcachehelper";
-import { COBOLSettings } from "./iconfiguration";
 
 import * as crypto from 'crypto';
 import * as fs from 'fs';
 import { Hash } from "crypto";
 import path from "path";
-import { InMemoryGlobalSymbolCache } from "./cobolglobalcache";
+
+import { COBOLWorkspaceSymbolCacheHelper } from "./cobolworkspacecache";
+import { InMemoryGlobalSymbolCache } from "./globalcachehelper";
+import { FileSourceHandler } from "./filesourcehandler";
+import { COBOLSettings } from "./iconfiguration";
 
 const args = process.argv.slice(2);
-const features: IExternalFeatures = ConsoleExternalFeatures.Default;
+const features = ConsoleExternalFeatures.Default;
 
 class Utils {
     private static msleep(n: number) {
@@ -26,10 +25,10 @@ class Utils {
         Utils.msleep(n * 1000);
     }
 
-    private static isFileT(sdir: string): [boolean, fs.Stats | undefined] {
+    private static isFileT(sdir: string): [boolean, fs.BigIntStats | undefined] {
         try {
             if (fs.existsSync(sdir)) {
-                const f = fs.statSync(sdir);
+                const f = fs.statSync(sdir, { bigint: true } );
                 if (f && f.isFile()) {
                     return [true, f];
                 }
@@ -50,9 +49,11 @@ class Utils {
     public static cacheUpdateRequired(cacheDirectory: string, nfilename: string): boolean {
         const filename = path.normalize(nfilename);
 
-        const cachedMtime = InMemoryGlobalSymbolCache.sourceFilenameModified.get(filename);
+        const cachedMtimeWS = InMemoryGlobalSymbolCache.sourceFilenameModified.get(filename);
+        const cachedMtime = cachedMtimeWS?.lastModifiedTime;
+        // features.logMessage(`cacheUpdateRequired(${nfilename} = ${cachedMtime})`);
         if (cachedMtime !== undefined) {
-            const stat4src = fs.statSync(filename);
+            const stat4src = fs.statSync(filename, { bigint:true });
             if (cachedMtime < stat4src.mtimeMs) {
                 return true;
             }
@@ -63,7 +64,7 @@ class Utils {
         const fnStat = Utils.isFileT(fn);
         if (fnStat[0]) {
             const stat4cache = fnStat[1];
-            const stat4src = fs.statSync(filename);
+            const stat4src = fs.statSync(filename, { bigint: true });
             if (stat4cache !== undefined && stat4cache.mtimeMs < stat4src.mtimeMs) {
                 return true;
             }
@@ -94,6 +95,7 @@ for (const arg of args) {
         try {
             lastJsonFile = arg;
             const scanData = ScanDataHelper.load(arg);
+            features.setWorkspaceFolders(scanData.workspaceFolders);
             const aborted = false;
             const stats = new ScanStats();
             stats.start = Utils.performance_now();
@@ -101,7 +103,12 @@ for (const arg of args) {
             stats.maxDirectoryDepth = scanData.maxDirectoryDepth;
             stats.fileCount = scanData.fileCount;
 
-            GlobalCachesHelper.loadGlobalSymbolCache(scanData.cacheDirectory);
+            // TODO: add in other metadata items
+            COBOLWorkspaceSymbolCacheHelper.loadGlobalCacheFromArray(scanData.md_symbols,true);
+            COBOLWorkspaceSymbolCacheHelper.loadGlobalEntryCacheFromArray(scanData.md_entrypoints,true);
+            COBOLWorkspaceSymbolCacheHelper.loadGlobalTypesCacheFromArray(scanData.md_types,true);
+            COBOLWorkspaceSymbolCacheHelper.loadFileCacheFromArray(features,scanData.md_metadata_files, true);
+
             if (scanData.showStats) {
                 if (stats.directoriesScanned !== 0) {
                     features.logMessage(` Directories scanned   : ${stats.directoriesScanned}`);
@@ -125,7 +132,7 @@ for (const arg of args) {
                     fCount++; fSendCount++;
                     if (fSendCount === fSendOn) {
                         if (process.send) {
-                            process.send(`@@STATUS ${fCount} ${scanData.Files.length}`);
+                            process.send(`${COBSCANNER_STATUS} ${fCount} ${scanData.Files.length}`);
                         }
                         fSendCount = 0;
                     }
@@ -143,9 +150,9 @@ for (const arg of args) {
                             }
                         }
 
-                        // if (scanData.showMessage) {
-                        //     features.logMessage(`  Parse completed: ${file}`);
-                        // }
+                        if (scanData.showMessage) {
+                            features.logMessage(`  Parse completed: ${file}`);
+                        }
                         stats.filesScanned++;
                     } else {
                         stats.filesUptodate++;
@@ -174,9 +181,7 @@ for (const arg of args) {
                     if (features.logTimedMessage(end, completedMessage) === false) {
                         features.logMessage(completedMessage);
                     }
-
                 }
-                GlobalCachesHelper.saveGlobalCache(scanData.cacheDirectory);
             }
         }
         catch (e) {

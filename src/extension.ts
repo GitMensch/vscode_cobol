@@ -1,27 +1,23 @@
 'use strict';
-
-import { commands, workspace, StatusBarItem, StatusBarAlignment, ExtensionContext, languages, TextDocument, Position, CancellationToken, ProviderResult, Definition, window,  OutputChannel, extensions, tasks, ViewColumn } from 'vscode';
-import * as cobolProgram from './cobolprogram';
-import * as tabstopper from './tabstopper';
-import * as opencopybook from './opencopybook';
-import * as commenter from './commenter';
-import { COBOLDocumentationCommentHandler } from './doccomment';
-import { KeywordAutocompleteCompletionItemProvider } from './keywordprovider';
-import { enableMarginCobolMargin, isEnabledViaWorkspace4cobol } from './margindecorations';
-
-import { jclStatements } from "./keywords/jclstatements";
-import { cobolKeywords, cobolProcedureKeywords, cobolRegisters, cobolStorageKeywords } from "./keywords/cobolKeywords";
-
-import { CobolDocumentSymbolProvider, JCLDocumentSymbolProvider } from './symbolprovider';
-
 import * as path from 'path';
 import * as fs from 'fs';
 import * as vscode from "vscode";
 import os from 'os';
 
+import { commands, workspace, StatusBarItem, StatusBarAlignment, ExtensionContext, languages, TextDocument, Position, CancellationToken, ProviderResult, Definition, window, OutputChannel, extensions, ViewColumn, ConfigurationChangeEvent } from 'vscode';
+import * as cobolProgram from './cobolprogram';
+import * as tabstopper from './tabstopper';
+import * as opencopybook from './opencopybook';
+import * as commenter from './commenter';
+
+import { COBOLDocumentationCommentHandler } from './doccomment';
+import { KeywordAutocompleteCompletionItemProvider } from './keywordprovider';
+import { enableMarginCobolMargin, isEnabledViaWorkspace4cobol } from './margindecorations';
+import { jclStatements } from "./keywords/jclstatements";
+import { acuKeywords, cobolKeywords, cobolProcedureKeywords, cobolRegisters, cobolStorageKeywords } from "./keywords/cobolKeywords";
+import { CobolDocumentSymbolProvider, JCLDocumentSymbolProvider } from './symbolprovider';
+
 import updateDecorations from './margindecorations';
-// import { getCallTarget, CallTarget } from './keywords/cobolCallTargets';
-import { GlobalCachesHelper } from "./globalcachehelper";
 import { COBOLFileUtils } from './opencopybook';
 
 import VSCOBOLSourceScanner, { clearCOBOLCache } from './vscobolscanner';
@@ -31,7 +27,7 @@ import { CobolLinterProvider, CobolLinterActionFixer } from './cobollinter';
 import { SourceViewTree } from './sourceviewtree';
 import { CobolSourceCompletionItemProvider } from './cobolprovider';
 import { COBOLUtils, FoldStyle, FoldAction } from './cobolutils';
-import { ICOBOLSettings } from './iconfiguration';
+import { COBOLSettings, ICOBOLSettings } from './iconfiguration';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const propertiesReader = require('properties-reader');
@@ -43,13 +39,17 @@ import { getWorkspaceFolders } from './cobolfolders';
 import { COBOLSourceScannerUtils } from './cobolsourcescannerutils';
 import { COBOLSourceDefinition } from './sourcedefinitionprovider';
 import { CachedCOBOLSourceDefinition } from './cachedsourcedefinitionprovider';
-import { ESourceFormat } from './externalfeatures';
+import { CacheDirectoryStrategy } from './externalfeatures';
 import { VSExternalFeatures } from './vsexternalfeatures';
 import { VSCobScanner } from './vscobscanner';
 import { BldScriptTaskProvider } from './bldTaskProvider';
 import { COBOLCaseFormatter } from './caseformatter';
+import { COBOLCallTargetProvider } from './cobolcalltargetprovider';
+import { COBOLWorkspaceSymbolCacheHelper } from './cobolworkspacecache';
+import { COBOLPreprocessorHelper } from './cobolsourcescanner';
+import { SourceItem } from './sourceItem';
+import { VSSemanticProvider } from './vssemanticprovider';
 
-let formatStatusBarItem: StatusBarItem;
 export const progressStatusBarItem: StatusBarItem = window.createStatusBarItem(StatusBarAlignment.Left);
 
 let currentContext: ExtensionContext;
@@ -60,7 +60,27 @@ let sourceTreeWatcher: vscode.FileSystemWatcher | undefined = undefined;
 
 let bldscriptTaskProvider: vscode.Disposable | undefined;
 
+
+export function getAllCobolSelectors(): vscode.DocumentSelector {
+    return [
+        { scheme: 'file', language: 'COBOL_MF_LISTFILE' },
+        { scheme: 'file', language: 'COBOL' },
+        { scheme: 'file', language: 'COBOLIT' },
+        { scheme: 'file', language: 'ACUCOBOL' }    // alias
+    ];
+}
+
+
+export function isKnownCOBOLLanguageId(langid: string): boolean {
+    if (langid === 'COBOL' || langid === 'ACUCOBOL' || langid === 'COBOLIT') {
+        return true;
+    }
+    return false
+}
+
 export const ExternalFeatures = new VSExternalFeatures();
+
+export const currentHostInformation = `${os.hostname()}/${os.userInfo().username}`;
 
 export function getCombinedCopyBookSearchPath(): string[] {
     return fileSearchDirectory;
@@ -68,7 +88,7 @@ export function getCombinedCopyBookSearchPath(): string[] {
 
 export function isDirectory(sdir: string): boolean {
     try {
-        const f = fs.statSync(sdir);
+        const f = fs.statSync(sdir, { bigint: true });
         if (f && f.isDirectory()) {
             return true;
         }
@@ -130,19 +150,70 @@ export class COBOLStatUtils {
 
         return false;
     }
+
+    public static getFullWorkspaceFilename(sdir: string, sdirMs: BigInt): string | undefined {
+        const ws = getWorkspaceFolders();
+        if (workspace === undefined || ws === undefined) {
+            return undefined;
+        }
+        for (const folder of ws) {
+            if (folder.uri.scheme === 'file') {
+                const folderPath = folder.uri.path;
+                const possibleFile = path.join(folderPath, sdir);
+                if (COBOLStatUtils.isFile(possibleFile)) {
+                    const stat4src = fs.statSync(possibleFile, { bigint: true });
+                    if (sdirMs === stat4src.mtimeMs) {
+                        return possibleFile;
+                    }
+                }
+            }
+        }
+
+        return undefined;
+    }
+
+    public static getShortWorkspaceFilename(ddir: string): string | undefined {
+        const ws = getWorkspaceFolders();
+        if (workspace === undefined || ws === undefined) {
+            return undefined;
+        }
+
+        const fullPath = path.normalize(ddir);
+        let bestShortName = "";
+        for (const folder of ws) {
+            if (folder.uri.scheme === 'file') {
+                const folderPath = folder.uri.path;
+                if (fullPath.startsWith(folderPath)) {
+                    const possibleShortPath = fullPath.substr(1 + folderPath.length);
+                    if (bestShortName.length === 0) {
+                        bestShortName = possibleShortPath;
+                    } else {
+                        if (possibleShortPath.length < possibleShortPath.length) {
+                            bestShortName = possibleShortPath;
+                        }
+                    }
+                }
+            }
+        }
+
+        return bestShortName.length === 0 ? undefined : bestShortName;
+    }
 }
 
 
 let fileSearchDirectory: string[] = [];
 let invalidSearchDirectory: string[] = [];
 let unitTestTerminal: vscode.Terminal | undefined = undefined;
+let commandTerminal: vscode.Terminal | undefined = undefined;
 const terminalName = "UnitTest";
+const commandTerminalName = "COBOL Application";
 
 
 const blessed_extensions: string[] = [
-    "bitlang.cobol",
     "HCLTechnologies.hclappscancodesweep",      // code scanner
 ];
+
+let blessed_extension_active = false;
 
 const known_problem_extensions: string[] = [
     "OlegKunitsyn.gnucobol-debug",              // debugger
@@ -157,23 +228,28 @@ function checkForExtensionConflicts(settings: ICOBOLSettings): string {
     let grab_info_for_ext: vscode.Extension<any> | undefined = undefined;
     let reason = "";
 
+    dupExtensionMessage = "";
+
     for (const ext of extensions.all) {
         if (ext !== undefined && ext.packageJSON !== undefined) {
+            let continue_now = blessed_extension_active;
             if (ext.packageJSON.id !== undefined) {
-                let okay2Continue = false;
+                if (ext.packageJSON.id === 'bitlang.cobol') {
+                    continue;
+                }
                 for (const blessed_extension of blessed_extensions) {
                     if (blessed_extension === ext.packageJSON.id) {
-                        okay2Continue= true;
+                        blessed_extension_active = continue_now = true;
                     }
                 }
                 for (const known_problem_extension of known_problem_extensions) {
                     if (known_problem_extension === ext.packageJSON.id) {
-                        grab_info_for_ext=ext;
+                        grab_info_for_ext = ext;
                         reason = "debugger support is problematic with this extension";
-                        okay2Continue = true;
+                        continue_now = true;
                     }
                 }
-                if (okay2Continue) {
+                if (continue_now) {
                     continue;
                 }
             }
@@ -264,14 +340,17 @@ function checkForExtensionConflicts(settings: ICOBOLSettings): string {
 let checkForExtensionConflictsMessage = "";
 let messageBoxDone = false;
 
-function initExtensionSearchPaths(config: ICOBOLSettings) {
+function initExtensionSearchPaths(config: ICOBOLSettings, checkForConflicts: boolean) {
 
-    checkForExtensionConflictsMessage = checkForExtensionConflicts(config);
-    if (checkForExtensionConflictsMessage.length !== 0 && config.ignore_unsafe_extensions === false && messageBoxDone === false) {
-        messageBoxDone = true;
-        window.showInformationMessage("COBOL Extension that has found duplicate or conflicting functionality\n\nSee View->Output->COBOL for more information", { modal: true });
+    if (checkForConflicts) {
+        checkForExtensionConflictsMessage = checkForExtensionConflicts(config);
+        if (checkForExtensionConflictsMessage.length !== 0 && config.ignore_unsafe_extensions === false && messageBoxDone === false) {
+            messageBoxDone = true;
+            window.showInformationMessage("COBOL Extension that has found duplicate or conflicting functionality\n\nSee View->Output->COBOL for more information", { modal: true });
+        }
+    } else {
+        checkForExtensionConflictsMessage = "";
     }
-
     fileSearchDirectory.length = 0;
 
     const extsdir = config.copybookdirs;
@@ -346,34 +425,50 @@ function initExtensionSearchPaths(config: ICOBOLSettings) {
     invalidSearchDirectory = invalidSearchDirectory.filter((elem, pos) => invalidSearchDirectory.indexOf(elem) === pos);
 }
 
-function activateLogChannelAndPaths(hide: boolean, settings: ICOBOLSettings) {
-    if (hide) {
-        COBOLOutputChannel.hide();
-    } else {
-        logChannelSetPreserveFocus(true);
+function activateLogChannelAndPaths(hide: boolean, settings: ICOBOLSettings, quiet: boolean) {
+    if (!quiet) {
+        if (hide) {
+            COBOLOutputChannel.hide();
+        } else {
+            logChannelSetPreserveFocus(true);
+        }
     }
     COBOLOutputChannel.clear();
 
     const thisExtension = extensions.getExtension("bitlang.cobol");
     if (thisExtension !== undefined) {
-        logMessage(`VSCode version : ${vscode.version}`);
-        logMessage(` Platform          : ${os.platform}`);
-        logMessage(` Architecture      : ${os.arch}`);
+        logMessage(`VSCode version                    : ${vscode.version}`);
+        logMessage(` Platform                         : ${os.platform}`);
+        logMessage(` Architecture                     : ${os.arch}`);
         logMessage("Extension Information:");
-        logMessage(` Extension path    : ${thisExtension.extensionPath}`);
-        logMessage(` Version           : ${thisExtension.packageJSON.version}`);
-        logMessage(" Caching");
-        logMessage(`  Cache Strategy   : ${settings.cache_metadata}`);
-        const cacheDir = VSCOBOLSourceScanner.getCacheDirectory();
-        if (cacheDir !== undefined) {
-            logMessage(`  Cache directory  : ${cacheDir}`);
-        }
+        logMessage(` Extension path                   : ${thisExtension.extensionPath}`);
+        logMessage(` Version                          : ${thisExtension.packageJSON.version}`);
         logMessage(` UNC paths disabled               : ${settings.disable_unc_copybooks_directories}`);
         logMessage(` Parse copybook for references    : ${settings.parse_copybooks_for_references}`);
         logMessage(` Editor maxTokenizationLineLength : ${settings.editor_maxTokenizationLineLength}`)
+        logMessage(` Semantic token provider enabled  : ${settings.enable_semantic_token_provider}`);
+        if (vscode.workspace.workspaceFile !== undefined) {
+            logMessage(` Active workspacefile             : ${vscode.workspace.workspaceFile}`);
+        }
+
+        if (VSCOBOLConfiguration.isOnDiskCachingEnabled()) {
+            logMessage("----------------------------------------------------------------------");
+            logMessage(" Deprecated Features settings");
+            logMessage("");
+            logMessage(" Caching");
+            logMessage(`  Cache Strategy   : ${settings.cache_metadata}`);
+            const cacheDir = VSCOBOLSourceScanner.getCacheDirectory();
+            if (cacheDir !== undefined) {
+                logMessage(`  Cache directory  : ${cacheDir}`);
+            }
+            logMessage("----------------------------------------------------------------------");
+        }
+
+        dumpPreProcInfo(settings);
+
     }
 
-    initExtensionSearchPaths(settings);
+    initExtensionSearchPaths(settings, false);
 
     if (thisExtension !== undefined) {
         const ws = getWorkspaceFolders();
@@ -404,11 +499,40 @@ function activateLogChannelAndPaths(hide: boolean, settings: ICOBOLSettings) {
     }
 }
 
+export function dumpPreProcInfo(settings: COBOLSettings): void {
+    for (const extName of settings.preprocessor_extensions) {
+        if (COBOLPreprocessorHelper.preprocessorsExts.has(extName)) {
+            const activePreProc = COBOLPreprocessorHelper.preprocessorsExts.get(extName);
+
+            if (activePreProc !== undefined) {
+                logMessage(` Active preprocessor              : ${activePreProc.id}`);
+                logMessage(`                                  : ${activePreProc.description}`);
+                logMessage(`                                  : ${activePreProc.bugReportEmail}`);
+                logMessage(`                                  : ${activePreProc.bugReportUrl}`);
+            }
+            continue;
+        }
+        logMessage('');
+        logMessage(` Registered preprocessor          : ${extName}`);
+        logMessage('');
+    }
+}
+
 export function getCurrentContext(): ExtensionContext {
     return currentContext;
 }
 
 function flip_plaintext(doc: TextDocument) {
+    if (doc === undefined) {
+        return;
+    }
+
+    const settings = VSCOBOLConfiguration.get();
+    if ((blessed_extension_active || settings.ignore_unsafe_extensions) && doc.languageId === 'cobol') {
+        vscode.languages.setTextDocumentLanguage(doc, "COBOL");
+        return;
+    }
+
     if (doc.languageId === 'plaintext' || doc.languageId === 'tsql') {  // one tsql ext grabs .lst!
         const lineCount = doc.lineCount;
         if (lineCount >= 3) {
@@ -463,22 +587,82 @@ function setupSourceViewTree(config: ICOBOLSettings, reinit: boolean) {
 
 }
 
-export function activate(context: ExtensionContext): void {
+function actionSourceViewItemFunction(si: SourceItem, debug: boolean) {
+    if (commandTerminal === undefined) {
+        commandTerminal = vscode.window.createTerminal(commandTerminalName);
+    }
+
+    let prefRunner = "";
+    let prefRunnerDebug = "";
+    let fsPath = "";
+    if (si !== undefined && si.uri !== undefined) {
+        fsPath = si.uri.path as string;
+    }
+
+    if (COBOLFileUtils.isWin32) {
+        if (fsPath.endsWith("acu")) {
+            prefRunner = "wrun32";
+            prefRunnerDebug = debug ? "-d " : "";
+        } else if (fsPath.endsWith("int") || fsPath.endsWith("gnt")) {
+            prefRunner = "cobrun";
+            prefRunnerDebug = debug ? "(+A) " : "";
+        }
+    } else {
+        // todo consider adding threaded version, cobmode
+        if (fsPath.endsWith("int") || fsPath.endsWith("gnt")) {
+            prefRunner = debug ? "anim" : "cobrun";
+        } else if (fsPath.endsWith("acu")) {
+            prefRunner = "runcbl";
+            prefRunnerDebug = debug ? "-d " : "";
+        }
+    }
+
+    commandTerminal.show(true);
+    commandTerminal.sendText(`${prefRunner} ${prefRunnerDebug}${fsPath}`);
+}
+
+export async function activate(context: ExtensionContext): Promise<void> {
     currentContext = context;
 
     // re-init if something gets installed or removed
     const onExtChange = vscode.extensions.onDidChange(() => {
         const settings: ICOBOLSettings = VSCOBOLConfiguration.init();
-        activateLogChannelAndPaths(true, settings);
+        activateLogChannelAndPaths(true, settings, false);
+        logMessage("extensions changed");
     });
     context.subscriptions.push(onExtChange);
 
 
-    const onDidChangeConfiguration = workspace.onDidChangeConfiguration(() => {
-        const settings: ICOBOLSettings = VSCOBOLConfiguration.init();
-        clearCOBOLCache();
-        activateLogChannelAndPaths(true, settings);
-        setupSourceViewTree(settings, true);
+    const onDidChangeConfiguration = workspace.onDidChangeConfiguration((event: ConfigurationChangeEvent) => {
+        const updated = event.affectsConfiguration(`coboleditor`);
+        const md_syms = event.affectsConfiguration("coboleditor.metadata_symbols");
+        const md_eps = event.affectsConfiguration("coboleditor.metadata_entrypoints");
+        const md_types = event.affectsConfiguration("coboleditor.metadata_types");
+        const md_metadata_files = event.affectsConfiguration("coboleditor.metadata_files");
+
+        if (updated) {
+            const settings: ICOBOLSettings = VSCOBOLConfiguration.init();
+            if (!md_syms && !md_eps && !md_types && !md_metadata_files) {
+                clearCOBOLCache();
+                activateLogChannelAndPaths(true, settings, true);
+                setupSourceViewTree(settings, true);
+            }
+            if (md_syms) {
+                COBOLWorkspaceSymbolCacheHelper.loadGlobalCacheFromArray(settings.metadata_symbols, true);
+            }
+
+            if (md_eps) {
+                COBOLWorkspaceSymbolCacheHelper.loadGlobalEntryCacheFromArray(settings.metadata_entrypoints, true);
+            }
+
+            if (md_types) {
+                COBOLWorkspaceSymbolCacheHelper.loadGlobalTypesCacheFromArray(settings.metadata_types, true);
+            }
+
+            if (md_metadata_files) {
+                COBOLWorkspaceSymbolCacheHelper.loadFileCacheFromArray(ExternalFeatures, settings.metadata_files, true);
+            }
+        }
     });
     context.subscriptions.push(onDidChangeConfiguration);
 
@@ -487,12 +671,17 @@ export function activate(context: ExtensionContext): void {
     const collection = languages.createDiagnosticCollection('cobolDiag');
     const linter = new CobolLinterProvider(collection, VSCOBOLConfiguration.get());
     const cobolfixer = new CobolLinterActionFixer();
-    initExtensionSearchPaths(settings);
-    activateLogChannelAndPaths(true, settings);
+    initExtensionSearchPaths(settings, true);
+    activateLogChannelAndPaths(true, settings, false);
+    COBOLWorkspaceSymbolCacheHelper.loadGlobalCacheFromArray(settings.metadata_symbols, false);
+    COBOLWorkspaceSymbolCacheHelper.loadGlobalEntryCacheFromArray(settings.metadata_entrypoints, false);
+    COBOLWorkspaceSymbolCacheHelper.loadGlobalTypesCacheFromArray(settings.metadata_types, false);
+    COBOLWorkspaceSymbolCacheHelper.loadFileCacheFromArray(ExternalFeatures, settings.metadata_files, false);
 
     const insertIgnoreCommentLineCommand = commands.registerCommand("cobolplugin.insertIgnoreCommentLine", function (docUri: vscode.Uri, offset: number, code: string) {
         cobolfixer.insertIgnoreCommentLine(docUri, offset, code);
     });
+
     const move2pdCommand = commands.registerCommand('cobolplugin.move2pd', function () {
         cobolProgram.move2pd();
     });
@@ -533,7 +722,7 @@ export function activate(context: ExtensionContext): void {
         if (window.activeTextEditor !== undefined) {
             const langid = window.activeTextEditor.document.languageId;
 
-            if (langid === 'COBOL' ||  langid === 'ACUCOBOL') {
+            if (isKnownCOBOLLanguageId(langid)) {
                 if (settings.line_comment) {
                     commenter.processCommentLine();
                 } else {
@@ -595,12 +784,15 @@ export function activate(context: ExtensionContext): void {
         await VSCOBOLSourceScanner.checkWorkspaceForMissingCopybookDirs();
     });
 
-    const processAllFilesInWorkspaceOutOfProcess = commands.registerCommand('cobolplugin.processAllFilesInWorkspace', async () => {
-        await VSCobScanner.processAllFilesInWorkspaceOutOfProcess(true);
+    const processAllFilesInWorkspaceOutOfProcessDeprecated = commands.registerCommand('cobolplugin.deprecated.processAllFilesInWorkspace', async () => {
+        await VSCobScanner.processAllFilesInWorkspaceOutOfProcess(true, true);
     });
 
+    const processAllFilesInWorkspaceOutOfProcess = commands.registerCommand('cobolplugin.processAllFilesInWorkspace', async () => {
+        await VSCobScanner.processAllFilesInWorkspaceOutOfProcess(true, false);
+    });
 
-    const dumpMetadata = commands.registerCommand('cobolplugin.dumpMetaData', function () {
+    const dumpMetadata = commands.registerCommand('cobolplugin.deprecated.dumpMetaData', function () {
         const cacheDirectory = VSCOBOLSourceScanner.getCacheDirectory();
         if (cacheDirectory !== undefined) {
             COBOLSourceScannerUtils.dumpMetaData(settings, cacheDirectory);
@@ -609,7 +801,7 @@ export function activate(context: ExtensionContext): void {
         }
     });
 
-    const clearMetaData = commands.registerCommand('cobolplugin.clearMetaData', function () {
+    const clearMetaData = commands.registerCommand('cobolplugin.deprecated.clearMetaData', function () {
         const cacheDirectory = VSCOBOLSourceScanner.getCacheDirectory();
         if (cacheDirectory !== undefined) {
             VSCOBOLSourceScanner.clearMetaData(settings, cacheDirectory);
@@ -618,22 +810,9 @@ export function activate(context: ExtensionContext): void {
         }
     });
 
-    const syntaxCheck = commands.registerCommand('cobolplugin.syntaxCheck', function () {
-        tasks.fetchTasks().then((fetchedTasks) => {
-            for (const task of fetchedTasks) {
-                if (task.name.startsWith("cobol-syntax-check")) {
-                    tasks.executeTask(task);
-                }
-            }
-        }, (reason) => {
-            logMessage(`Syntax check failed due to ${reason}`);
-        });
-    });
-
-
     const onDidChangeWorkspaceFolders = workspace.onDidChangeWorkspaceFolders(() => {
         const settings: ICOBOLSettings = VSCOBOLConfiguration.init();
-        activateLogChannelAndPaths(false, settings);
+        activateLogChannelAndPaths(false, settings, true);
     });
     context.subscriptions.push(onDidChangeWorkspaceFolders);
 
@@ -673,27 +852,18 @@ export function activate(context: ExtensionContext): void {
 
     context.subscriptions.push(toggleCOBOLMargin);
     context.subscriptions.push(checkWorkspaceForMissingCopybookDirs);
+    context.subscriptions.push(processAllFilesInWorkspaceOutOfProcessDeprecated);
     context.subscriptions.push(processAllFilesInWorkspaceOutOfProcess);
 
     context.subscriptions.push(dumpMetadata);
     context.subscriptions.push(clearMetaData);
 
     context.subscriptions.push(COBOLDocumentationCommentHandler.register());
-    if (settings.experimental_features) {
-        context.subscriptions.push(COBOLCaseFormatter.register());
-    }
+    context.subscriptions.push(COBOLCaseFormatter.register());
 
     context.subscriptions.push(insertIgnoreCommentLineCommand);
 
-    context.subscriptions.push(syntaxCheck);
-
-    const allCobolSelectors = [
-        { scheme: 'file', language: 'COBOL_MF_LISTFILE' },
-        { scheme: 'file', language: 'COBOL' },
-        { scheme: 'file', language: 'ACUCOBOL' }
-    ];
-
-    const copyBookProvider = languages.registerDefinitionProvider(allCobolSelectors, {
+    const copyBookProvider = languages.registerDefinitionProvider(getAllCobolSelectors(), {
         provideDefinition(doc: TextDocument, pos: Position, ct: CancellationToken): ProviderResult<Definition> {
             const ccbp = new opencopybook.COBOLCopyBookProvider();
             return ccbp.provideDefinition(doc, pos, ct);
@@ -701,7 +871,7 @@ export function activate(context: ExtensionContext): void {
     });
     context.subscriptions.push(copyBookProvider);
 
-    const sourcedefProvider = languages.registerDefinitionProvider(allCobolSelectors, {
+    const sourcedefProvider = languages.registerDefinitionProvider(getAllCobolSelectors(), {
         provideDefinition(doc: TextDocument, pos: Position, ct: CancellationToken): ProviderResult<Definition> {
             const csd = new COBOLSourceDefinition();
             return csd.provideDefinition(doc, pos, ct);
@@ -710,17 +880,25 @@ export function activate(context: ExtensionContext): void {
     context.subscriptions.push(sourcedefProvider);
 
     if (VSCOBOLConfiguration.isOnDiskCachingEnabled()) {
-        const sourcedefProvider = languages.registerDefinitionProvider(allCobolSelectors, {
+        const cachedSourcedefProvider = languages.registerDefinitionProvider(getAllCobolSelectors(), {
             provideDefinition(doc: TextDocument, pos: Position, ct: CancellationToken): ProviderResult<Definition> {
                 const csdp = new CachedCOBOLSourceDefinition();
                 return csdp.provideDefinition(doc, pos, ct);
             }
         });
-        context.subscriptions.push(sourcedefProvider);
+        context.subscriptions.push(cachedSourcedefProvider);
     }
 
-    context.subscriptions.push(languages.registerReferenceProvider(allCobolSelectors, new CobolReferenceProvider()));
-    context.subscriptions.push(languages.registerCodeActionsProvider(allCobolSelectors, cobolfixer));
+    const COBOLCallTargetProviderProvider = languages.registerDefinitionProvider(getAllCobolSelectors(), {
+        provideDefinition(doc: TextDocument, pos: Position, ct: CancellationToken): ProviderResult<Definition> {
+            const csdp = new COBOLCallTargetProvider();
+            return csdp.provideDefinition(doc, pos, ct);
+        }
+    });
+    context.subscriptions.push(COBOLCallTargetProviderProvider);
+
+    context.subscriptions.push(languages.registerReferenceProvider(getAllCobolSelectors(), new CobolReferenceProvider()));
+    context.subscriptions.push(languages.registerCodeActionsProvider(getAllCobolSelectors(), cobolfixer));
 
     const jclSelectors = [
         { scheme: 'file', language: 'JCL' }
@@ -729,10 +907,14 @@ export function activate(context: ExtensionContext): void {
     const completionJCLItemProviderDisposable = languages.registerCompletionItemProvider(jclSelectors, completionJCLItemProvider);
     context.subscriptions.push(completionJCLItemProviderDisposable);
 
-    const allKeywords = cobolKeywords.concat(cobolStorageKeywords).concat(cobolRegisters).concat(cobolProcedureKeywords);
+    const allKeywords = cobolKeywords.concat(cobolStorageKeywords)
+        .concat(cobolRegisters)
+        .concat(cobolProcedureKeywords)
+        .concat(acuKeywords);
+
     const allKeywordsUnique = [...new Set(allKeywords)];
     const keywordProvider = new KeywordAutocompleteCompletionItemProvider(allKeywordsUnique, true);
-    const keywordProviderDisposible = languages.registerCompletionItemProvider(allCobolSelectors, keywordProvider);
+    const keywordProviderDisposible = languages.registerCompletionItemProvider(getAllCobolSelectors(), keywordProvider);
     context.subscriptions.push(keywordProviderDisposible);
 
     if (settings.outline) {
@@ -741,11 +923,11 @@ export function activate(context: ExtensionContext): void {
 
         /* TODO: add .DIR keywords too */
         const documentSymbolProvider = new CobolDocumentSymbolProvider();
-        context.subscriptions.push(languages.registerDocumentSymbolProvider(allCobolSelectors, documentSymbolProvider));
+        context.subscriptions.push(languages.registerDocumentSymbolProvider(getAllCobolSelectors(), documentSymbolProvider));
     }
 
     const cobolProvider = new CobolSourceCompletionItemProvider(VSCOBOLConfiguration.get());
-    const cobolProviderDisposible = languages.registerCompletionItemProvider(allCobolSelectors, cobolProvider);
+    const cobolProviderDisposible = languages.registerCompletionItemProvider(getAllCobolSelectors(), cobolProvider);
     context.subscriptions.push(cobolProviderDisposible);
 
     // const cobolCommentProvider = new CobolCommentProvider(VSCOBOLConfiguration.get());
@@ -791,11 +973,6 @@ export function activate(context: ExtensionContext): void {
         linter.updateLinter(window.activeTextEditor.document);
     }, null, context.subscriptions);
 
-    formatStatusBarItem = window.createStatusBarItem(StatusBarAlignment.Right);
-    formatStatusBarItem.command = "cobolplugin.change_source_format";
-    formatStatusBarItem.show();
-    context.subscriptions.push(formatStatusBarItem);
-
     progressStatusBarItem.command = "cobolplugin.showCOBOLChannel";
     progressStatusBarItem.hide();
     context.subscriptions.push(progressStatusBarItem);
@@ -806,7 +983,7 @@ export function activate(context: ExtensionContext): void {
     }
 
     // Open context menu on current file
-    const disposable = vscode.commands.registerCommand('cobolplugin.mfurunMenu', function (fileUri) {
+    const disposable4mfurun = vscode.commands.registerCommand('cobolplugin.mfurunMenu', function (fileUri) {
 
         if (unitTestTerminal === undefined) {
             unitTestTerminal = vscode.window.createTerminal(terminalName);
@@ -821,13 +998,29 @@ export function activate(context: ExtensionContext): void {
             (enableAnsiColor ? " -dc:ansi " : " ") +
             fileUri.fsPath);
     });
-    context.subscriptions.push(disposable);
+    context.subscriptions.push(disposable4mfurun);
 
+
+    const disposable4debugterminal = vscode.commands.registerCommand('cobolplugin.runDebugCommand', function (si: SourceItem) {
+        if (si !== undefined) {
+            actionSourceViewItemFunction(si, true);
+        }
+    });
+    context.subscriptions.push(disposable4debugterminal);
+
+    const disposable4terminal = vscode.commands.registerCommand('cobolplugin.runCommand', function (si: SourceItem) {
+        if (si !== undefined) {
+            actionSourceViewItemFunction(si, false);
+        }
+    });
+    context.subscriptions.push(disposable4terminal);
+
+    //
     const removeAllCommentsCommand = vscode.commands.registerCommand('cobolplugin.removeAllComments', () => {
         if (vscode.window.activeTextEditor) {
             const langid = vscode.window.activeTextEditor.document.languageId;
 
-            if (langid === 'COBOL' ||  langid === 'ACUCOBOL') {
+            if (isKnownCOBOLLanguageId(langid)) {
                 COBOLUtils.RemoveComments(vscode.window.activeTextEditor);
             }
         }
@@ -838,7 +1031,7 @@ export function activate(context: ExtensionContext): void {
         if (vscode.window.activeTextEditor) {
             const langid = vscode.window.activeTextEditor.document.languageId;
 
-            if (langid === 'COBOL' ||  langid === 'ACUCOBOL') {
+            if (isKnownCOBOLLanguageId(langid)) {
                 COBOLUtils.RemoveIdentificationArea(vscode.window.activeTextEditor);
             }
         }
@@ -849,7 +1042,7 @@ export function activate(context: ExtensionContext): void {
         if (vscode.window.activeTextEditor) {
             const langid = vscode.window.activeTextEditor.document.languageId;
 
-            if (langid === 'COBOL' ||  langid === 'ACUCOBOL') {
+            if (isKnownCOBOLLanguageId(langid)) {
                 COBOLUtils.removeColumnNumbers(vscode.window.activeTextEditor);
             }
         }
@@ -860,7 +1053,7 @@ export function activate(context: ExtensionContext): void {
         if (vscode.window.activeTextEditor) {
             const langid = vscode.window.activeTextEditor.document.languageId;
 
-            if (langid === 'COBOL' ||  langid === 'ACUCOBOL') {
+            if (isKnownCOBOLLanguageId(langid)) {
                 COBOLUtils.foldToken(vscode.window.activeTextEditor, FoldAction.Keywords, FoldStyle.LowerCase);
             }
         }
@@ -871,7 +1064,7 @@ export function activate(context: ExtensionContext): void {
         if (vscode.window.activeTextEditor) {
             const langid = vscode.window.activeTextEditor.document.languageId;
 
-            if (langid === 'COBOL' ||  langid === 'ACUCOBOL') {
+            if (isKnownCOBOLLanguageId(langid)) {
                 COBOLUtils.foldToken(vscode.window.activeTextEditor, FoldAction.Keywords, FoldStyle.UpperCase);
             }
         }
@@ -882,7 +1075,7 @@ export function activate(context: ExtensionContext): void {
         if (vscode.window.activeTextEditor) {
             const langid = vscode.window.activeTextEditor.document.languageId;
 
-            if (langid === 'COBOL' ||  langid === 'ACUCOBOL') {
+            if (isKnownCOBOLLanguageId(langid)) {
                 COBOLUtils.foldToken(vscode.window.activeTextEditor, FoldAction.Keywords, FoldStyle.CamelCase);
             }
         }
@@ -893,7 +1086,7 @@ export function activate(context: ExtensionContext): void {
         if (vscode.window.activeTextEditor) {
             const langid = vscode.window.activeTextEditor.document.languageId;
 
-            if (langid === 'COBOL' ||  langid === 'ACUCOBOL') {
+            if (isKnownCOBOLLanguageId(langid)) {
                 COBOLUtils.foldToken(vscode.window.activeTextEditor, FoldAction.ConstantsOrVariables, FoldStyle.UpperCase);
             }
         }
@@ -904,7 +1097,7 @@ export function activate(context: ExtensionContext): void {
         if (vscode.window.activeTextEditor) {
             const langid = vscode.window.activeTextEditor.document.languageId;
 
-            if (langid === 'COBOL' ||  langid === 'ACUCOBOL') {
+            if (isKnownCOBOLLanguageId(langid)) {
                 COBOLUtils.foldToken(vscode.window.activeTextEditor, FoldAction.ConstantsOrVariables, FoldStyle.UpperCase);
             }
         }
@@ -915,7 +1108,7 @@ export function activate(context: ExtensionContext): void {
         if (vscode.window.activeTextEditor) {
             const langid = vscode.window.activeTextEditor.document.languageId;
 
-            if (langid === 'COBOL' ||  langid === 'ACUCOBOL') {
+            if (isKnownCOBOLLanguageId(langid)) {
                 COBOLUtils.foldToken(vscode.window.activeTextEditor, FoldAction.ConstantsOrVariables, FoldStyle.CamelCase);
             }
         }
@@ -926,7 +1119,7 @@ export function activate(context: ExtensionContext): void {
         if (vscode.window.activeTextEditor) {
             const langid = vscode.window.activeTextEditor.document.languageId;
 
-            if (langid === 'COBOL' ||  langid === 'ACUCOBOL') {
+            if (isKnownCOBOLLanguageId(langid)) {
                 COBOLUtils.foldToken(vscode.window.activeTextEditor, FoldAction.PerformTargets, FoldStyle.LowerCase);
             }
         }
@@ -937,7 +1130,7 @@ export function activate(context: ExtensionContext): void {
         if (vscode.window.activeTextEditor) {
             const langid = vscode.window.activeTextEditor.document.languageId;
 
-            if (langid === 'COBOL' ||  langid === 'ACUCOBOL') {
+            if (isKnownCOBOLLanguageId(langid)) {
                 COBOLUtils.foldToken(vscode.window.activeTextEditor, FoldAction.PerformTargets, FoldStyle.UpperCase);
             }
         }
@@ -948,7 +1141,7 @@ export function activate(context: ExtensionContext): void {
         if (vscode.window.activeTextEditor) {
             const langid = vscode.window.activeTextEditor.document.languageId;
 
-            if (langid === 'COBOL' ||  langid === 'ACUCOBOL') {
+            if (isKnownCOBOLLanguageId(langid)) {
                 COBOLUtils.foldToken(vscode.window.activeTextEditor, FoldAction.PerformTargets, FoldStyle.CamelCase);
             }
         }
@@ -959,7 +1152,7 @@ export function activate(context: ExtensionContext): void {
         if (vscode.window.activeTextEditor) {
             const langid = vscode.window.activeTextEditor.document.languageId;
 
-            if (langid === 'COBOL' ||  langid === 'ACUCOBOL') {
+            if (isKnownCOBOLLanguageId(langid)) {
                 COBOLUtils.extractSelectionTo(vscode.window.activeTextEditor, true);
             }
         }
@@ -970,7 +1163,7 @@ export function activate(context: ExtensionContext): void {
         if (vscode.window.activeTextEditor) {
             const langid = vscode.window.activeTextEditor.document.languageId;
 
-            if (langid === 'COBOL' ||  langid === 'ACUCOBOL') {
+            if (isKnownCOBOLLanguageId(langid)) {
                 COBOLUtils.extractSelectionTo(vscode.window.activeTextEditor, false);
             }
         }
@@ -981,7 +1174,7 @@ export function activate(context: ExtensionContext): void {
         if (vscode.window.activeTextEditor) {
             const langid = vscode.window.activeTextEditor.document.languageId;
 
-            if (langid === 'COBOL' ||  langid === 'ACUCOBOL') {
+            if (isKnownCOBOLLanguageId(langid)) {
                 COBOLUtils.extractSelectionToCopybook(vscode.window.activeTextEditor);
             }
         }
@@ -1009,12 +1202,11 @@ export function activate(context: ExtensionContext): void {
     });
     context.subscriptions.push(showCOBOLChannel);
 
-
     const resequenceColumnNumbersCommands = vscode.commands.registerCommand('cobolplugin.resequenceColumnNumbers', () => {
         if (vscode.window.activeTextEditor) {
             const langid = vscode.window.activeTextEditor.document.languageId;
 
-            if (langid === 'COBOL' ||  langid === 'ACUCOBOL') {
+            if (isKnownCOBOLLanguageId(langid)) {
 
                 vscode.window.showInputBox({
                     prompt: 'Enter start line number and increment',
@@ -1031,8 +1223,8 @@ export function activate(context: ExtensionContext): void {
                         return;
                     }
                     const values: string[] = value.split(" ");
-                    const startValue: number = Number.parseInt(values[0]);
-                    const incrementValue: number = Number.parseInt(values[1]);
+                    const startValue: number = Number.parseInt(values[0], 10);
+                    const incrementValue: number = Number.parseInt(values[1], 10);
                     if (startValue >= 0 && incrementValue >= 1) {
                         COBOLUtils.resequenceColumnNumbers(vscode.window.activeTextEditor, startValue, incrementValue);
                     } else {
@@ -1044,46 +1236,40 @@ export function activate(context: ExtensionContext): void {
     });
     context.subscriptions.push(resequenceColumnNumbersCommands);
 
-    /* load the cache if we can */
-    const cacheDirectory = VSCOBOLSourceScanner.getCacheDirectory();
-    if (cacheDirectory !== undefined && cacheDirectory.length > 0) {
-        GlobalCachesHelper.loadGlobalSymbolCache(cacheDirectory);
-    }
-
-    if (checkForExtensionConflictsMessage.length !== 0) {
-        logMessage(checkForExtensionConflictsMessage);
-    }
-
     bldscriptTaskProvider = vscode.tasks.registerTaskProvider(BldScriptTaskProvider.BldScriptType, new BldScriptTaskProvider());
+    context.subscriptions.push(bldscriptTaskProvider);
 
-    openChangeLog();
+    const provider = VSSemanticProvider.provider();
+    vscode.languages.registerDocumentSemanticTokensProvider(getAllCobolSelectors(), provider, VSSemanticProvider.getLegend());
 
-    if (VSCOBOLConfiguration.get().process_metadata_cache_on_start) {
-        const pm = VSCobScanner.processAllFilesInWorkspaceOutOfProcess(false);
+    //no metadata, then seed it work basic implicit program-id symbols based on the files in workspace
+    const ws = workspace.getWorkspaceFolder;
+
+    if (ws !== undefined) {
+        const pm = COBOLUtils.populateDefaultCallableSymbols();
         pm.then(() => {
             return;
         });
     }
-}
 
-export function enableMarginStatusBar(formatStyle: ESourceFormat): void {
-    formatStatusBarItem.text = "Source:" + formatStyle.toString();
-    formatStatusBarItem.show();
-}
+    // display the message
+    if (checkForExtensionConflictsMessage.length !== 0) {
+        logMessage(checkForExtensionConflictsMessage);
+    }
 
+    if (settings.process_metadata_cache_on_start) {
+        const depMode = settings.cache_metadata !== CacheDirectoryStrategy.Off;
+        const pm = VSCobScanner.processAllFilesInWorkspaceOutOfProcess(false, depMode);
+        pm.then(() => {
+            return;
+        });
+    }
 
-export function hideMarginStatusBar(): void {
-    formatStatusBarItem.hide();
+    openChangeLog();
 }
 
 export async function deactivateAsync(): Promise<void> {
-    if (VSCOBOLConfiguration.isOnDiskCachingEnabled()) {
-        const cacheDirectory = VSCOBOLSourceScanner.getCacheDirectory();
-        if (cacheDirectory !== undefined) {
-            GlobalCachesHelper.saveGlobalCache(cacheDirectory);
-            formatStatusBarItem.dispose();
-        }
-    }
+    COBOLUtils.saveGlobalCacheToWorkspace(VSCOBOLConfiguration.get());
 }
 
 function openChangeLog(): void {

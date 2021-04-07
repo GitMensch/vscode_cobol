@@ -1,4 +1,6 @@
-import { logException, logMessage, logTimedMessage, performance_now } from "./extension";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
+import { COBOLStatUtils, logException, logMessage, logTimedMessage, performance_now } from "./extension";
 import { ESourceFormat, IExternalFeatures } from "./externalfeatures";
 import { ICOBOLSettings } from "./iconfiguration";
 import ISourceHandler from "./isourcehandler";
@@ -29,5 +31,9 @@ export class VSExternalFeatures implements IExternalFeatures{
 
     public getCOBOLSourceFormat(doc: ISourceHandler, config: ICOBOLSettings): ESourceFormat {
         return getCOBOLSourceFormat(doc,config);
+    }
+
+    public getFullWorkspaceFilename(sdir: string, sdirMs: BigInt): string | undefined {
+        return COBOLStatUtils.getFullWorkspaceFilename(sdir, sdirMs);
     }
 }

@@ -1,16 +1,18 @@
 import * as vscode from 'vscode';
-import { workspace } from 'vscode';
+import path from 'path';
 import COBOLSourceScanner, { splitArgument, camelize, COBOLTokenStyle } from './cobolsourcescanner';
 import { cobolKeywordDictionary, cobolRegistersDictionary, cobolStorageKeywordDictionary } from './keywords/cobolKeywords';
 import { logMessage, isDirectory, logException, COBOLStatUtils } from './extension';
 import { VSCodeSourceHandler } from './vscodesourcehandler';
 import VSCOBOLSourceScanner from './vscobolscanner';
+import { InMemoryGlobalCacheHelper, InMemoryGlobalSymbolCache } from "./globalcachehelper";
 import { writeFileSync } from 'fs';
-import path from 'path';
 import { COBOLFileUtils } from './opencopybook';
 import { VSCOBOLConfiguration } from './configuration';
 import { getWorkspaceFolders } from './cobolfolders';
 import { ICOBOLSettings } from './iconfiguration';
+import { COBOLFileSymbol } from './cobolglobalcache';
+import { COBOLWorkspaceSymbolCacheHelper } from './cobolworkspacecache';
 
 export enum FoldStyle {
     LowerCase = 1,
@@ -25,6 +27,125 @@ export enum FoldAction {
 }
 
 export class COBOLUtils {
+    static getCopybookGlobPattern(config: ICOBOLSettings): string {
+        let globString = "*.{";
+        for (const ext of config.copybookexts) {
+            if (ext.length !== 0) {
+                if (globString.endsWith("{")) {
+                    globString += ext;
+                } else {
+                    globString += "," + ext;
+                }
+            }
+        }
+
+        globString += "}";
+
+        return globString;
+    }
+
+    static async populateDefaultCallableSymbols(): Promise<void> {
+        const config = VSCOBOLConfiguration.get();
+        const globPattern = COBOLUtils.getCopybookGlobPattern(config);
+
+        await vscode.workspace.findFiles(globPattern).then((uris: vscode.Uri[]) => {
+            uris.forEach((uri: vscode.Uri) => {
+                const fullPath = uri.fsPath;
+                const fileName = InMemoryGlobalCacheHelper.getFilenameWithoutPath(fullPath);
+                const fileNameNoExt = path.basename(fileName, path.extname(fileName));
+                const fileNameNoExtLower = fileNameNoExt.toLowerCase();
+                const c = InMemoryGlobalSymbolCache.callableSymbols.get(fileNameNoExtLower);
+                if (c === undefined) {
+                    COBOLWorkspaceSymbolCacheHelper.addSymbol(fileName, fileNameNoExtLower);
+                }
+            });
+        });
+        COBOLUtils.saveGlobalCacheToWorkspace(config);
+    }
+
+
+    private static typeToArray(types: string[], prefix: string, typeMap: Map<string, COBOLFileSymbol[]>) {
+        for (const [i] of typeMap.entries()) {
+            const fileSymbol = typeMap.get(i);
+            if (fileSymbol !== undefined) {
+                fileSymbol.forEach(function (value: COBOLFileSymbol) {
+                    types.push(`${prefix},${i},${value.filename},${value.lnum}`);
+                });
+            }
+        }
+    }
+
+    public static saveGlobalCacheToWorkspace(settings: ICOBOLSettings, update = true): void {
+        // only update if we have a workspace
+        if (getWorkspaceFolders() === undefined) {
+            return;
+        }
+
+        // unless we say we want single folder support, never apply an update to it
+        if (settings.maintain_metadata_cache_single_folder == false && vscode.workspace.workspaceFile === undefined) {
+            return;
+        }
+
+        // only update when we are caching
+        if (settings.maintain_metadata_cache === false) {
+            return;
+        }
+
+        if (InMemoryGlobalSymbolCache.isDirty) {
+
+            const symbols: string[] = settings.metadata_symbols;
+            const entrypoints: string[] = settings.metadata_entrypoints;
+            const types: string[] = settings.metadata_types;
+            const files: string[] = settings.metadata_files;
+
+            symbols.length = 0;
+            entrypoints.length = 0;
+            types.length = 0;
+            files.length = 0;
+
+            for (const [i] of InMemoryGlobalSymbolCache.callableSymbols.entries()) {
+                const fileSymbol = InMemoryGlobalSymbolCache.callableSymbols.get(i);
+                if (fileSymbol !== undefined) {
+                    fileSymbol.forEach(function (value: COBOLFileSymbol) {
+                        symbols.push(`${i},${value.filename}`);
+                    });
+                }
+            }
+
+            for (const [i] of InMemoryGlobalSymbolCache.entryPoints.entries()) {
+                const fileSymbol = InMemoryGlobalSymbolCache.entryPoints.get(i);
+                if (fileSymbol !== undefined) {
+                    fileSymbol.forEach(function (value: COBOLFileSymbol) {
+                        entrypoints.push(`${i},${value.filename},${value.lnum}`);
+                    });
+                }
+            }
+
+            COBOLUtils.typeToArray(types, "T", InMemoryGlobalSymbolCache.types);
+            COBOLUtils.typeToArray(types, "I", InMemoryGlobalSymbolCache.interfaces);
+            COBOLUtils.typeToArray(types, "E", InMemoryGlobalSymbolCache.enums);
+
+            for (const [fileName] of InMemoryGlobalSymbolCache.sourceFilenameModified.entries()) {
+                const cws = InMemoryGlobalSymbolCache.sourceFilenameModified.get(fileName);
+                if (cws !== undefined) {
+                    files.push(`${cws.lastModifiedTime},${cws.workspaceFilename}`);
+                }
+            }
+
+            if (update) {
+                try {
+                    const editorConfig = vscode.workspace.getConfiguration('coboleditor');
+                    editorConfig.update('metadata_symbols', symbols, false);
+                    editorConfig.update('metadata_entrypoints', entrypoints, false);
+                    editorConfig.update('metadata_types', types, false);
+                    editorConfig.update('metadata_files', files, false);
+                    InMemoryGlobalSymbolCache.isDirty = false;
+                } catch (e) {
+                    logException("Failed to update metadata", e);
+                }
+            }
+        }
+    }
 
     public static inCopybookdirs(config: ICOBOLSettings, copybookdir: string): boolean {
         for (const ext of config.copybookdirs) {
@@ -47,7 +168,7 @@ export class COBOLUtils {
 
             if (COBOLFileUtils.isDirectPath(ddir)) {
                 const ws = getWorkspaceFolders();
-                if (workspace !== undefined && ws !== undefined) {
+                if (vscode.workspace !== undefined && ws !== undefined) {
                     if (COBOLStatUtils.isPathInWorkspace(ddir) === false) {
                         if (COBOLFileUtils.isNetworkPath(ddir)) {
                             logMessage(" Adding " + ddir + " to workspace");
@@ -99,7 +220,7 @@ export class COBOLUtils {
 
         // update copybookdirs with optimized version
         if (updateCopybookdirs) {
-            const editorConfig = workspace.getConfiguration('coboleditor');
+            const editorConfig = vscode.workspace.getConfiguration('coboleditor');
             editorConfig.update('copybookdirs', fileSearchDirectory);
             logMessage("Copybook settings and workspace has been updated.");
         } else {
@@ -187,7 +308,7 @@ export class COBOLUtils {
     }
 
     public static getMFUnitAnsiColorConfig(): boolean {
-        const editorConfig = workspace.getConfiguration('coboleditor');
+        const editorConfig = vscode.workspace.getConfiguration('coboleditor');
         let expEnabled = editorConfig.get<boolean>('mfunit.diagnostic.color');
         if (expEnabled === undefined || expEnabled === null) {
             expEnabled = false;
@@ -302,7 +423,7 @@ export class COBOLUtils {
         vscode.workspace.applyEdit(edits);
     }
 
-     private static isValidKeywordOrStorageKeyword(keyword: string): boolean {
+    private static isValidKeywordOrStorageKeyword(keyword: string): boolean {
         const keywordLower = keyword.toLowerCase();
         const isKeyword = cobolKeywordDictionary.has(keywordLower);
         if (isKeyword) {
@@ -344,7 +465,7 @@ export class COBOLUtils {
                     if (actionIt && foldConstantsToUpper) {
                         const cvars = current.constantsOrVariables.get(argLower);
                         if (cvars !== undefined) {
-                            for(const cvar of cvars) {
+                            for (const cvar of cvars) {
                                 if (cvar.tokenType === COBOLTokenStyle.Constant) {
                                     foldstyle = FoldStyle.UpperCase;
                                 }
@@ -403,18 +524,18 @@ export class COBOLUtils {
     public static foldToken(activeEditor: vscode.TextEditor, action: FoldAction, foldstyle: FoldStyle): void {
         const uri = activeEditor.document.uri;
 
+        const settings = VSCOBOLConfiguration.get();
         const file = new VSCodeSourceHandler(activeEditor.document, false);
-        const current: COBOLSourceScanner | undefined = VSCOBOLSourceScanner.getCachedObject(activeEditor.document);
+        const current: COBOLSourceScanner | undefined = VSCOBOLSourceScanner.getCachedObject(activeEditor.document, settings);
         if (current === undefined) {
             logMessage(`Unable to fold ${file.getFilename}, as it is has not been parsed`);
             return;
         }
 
-        const settings = VSCOBOLConfiguration.get();
         const edits = new vscode.WorkspaceEdit();
         // traverse all the lines
         for (let l = 0; l < file.getLineCount(); l++) {
-            const lineAt = file.getLine(l);
+            const lineAt = file.getLine(l, false);
             const text = lineAt;
 
             if (text === undefined) {

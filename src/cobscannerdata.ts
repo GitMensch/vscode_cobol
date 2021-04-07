@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import path from "path";
 import fs from "fs";
 
@@ -11,6 +12,11 @@ export class ScanData {
     public Files: string[] = [];
     public Directories: string[] = [];
     public showStats = true;
+    public md_symbols: string[] = [];
+    public md_entrypoints: string[] = [];
+    public md_types: string[] = [];
+    public md_metadata_files: string[] = [];
+    public workspaceFolders: string[] = [];
 }
 
 export class ScanStats {
@@ -28,13 +34,32 @@ export class ScanStats {
     showMessage = false;
 }
 
+export const COBSCANNER_STATUS = '@@STATUS';
+export const COBSCANNER_SENDPRGID = '@@SEND.PRGID';
+export const COBSCANNER_SENDEP = '@@SEND.EP';
+export const COBSCANNER_SENDINTERFACE = "@@SEND.INTID";
+export const COBSCANNER_SENDENUM = "@@SEND.ENUMID";
+export const COBSCANNER_SENDCLASS = "@@SEND.CLASSID";
+export const COBSCANNER_ADDFILE = "@@SEND.FILES";
+
+function replacer(this: any, key: any, value: any): any {
+
+    if (typeof value === 'bigint') {
+        return value.toString();
+    }
+
+    return value;
+}
+
 export class ScanDataHelper {
     public static readonly scanFilename = "cobscanner.json";
 
-    public static save(cacheDirectory: string, st: ScanData): void {
+    public static save(cacheDirectory: string, st: ScanData): string {
         const fn = path.join(cacheDirectory,ScanDataHelper.scanFilename);
 
-        fs.writeFileSync(fn, JSON.stringify(st));
+        fs.writeFileSync(fn, JSON.stringify(st,replacer));
+
+        return fn;
     }
 
     public static load(fn: string) : ScanData {
