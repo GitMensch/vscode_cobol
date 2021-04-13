@@ -3,6 +3,176 @@
 
 Changelog for spgennardvscode_cobol.
 
+## 7.4.13
+
+**performance tweaks**
+
+* [3ed3fb1448ab90f](https://github.com/spgennard/vscode_cobol/commit/3ed3fb1448ab90f) *2021-04-12 22:29:11*
+
+**prepare for delivery**
+
+* [fc17b8d9fca2e56](https://github.com/spgennard/vscode_cobol/commit/fc17b8d9fca2e56) *2021-04-12 21:32:08*
+
+**ignore warnings**
+
+* [71fa75b3eda254d](https://github.com/spgennard/vscode_cobol/commit/71fa75b3eda254d) *2021-04-12 21:22:09*
+
+**honour visability on references**
+
+* [d6e5ea875d2c305](https://github.com/spgennard/vscode_cobol/commit/d6e5ea875d2c305) *2021-04-12 21:06:27*
+
+**Update CHANGELOG.md**
+
+* [3e4bf8d6c916cb1](https://github.com/spgennard/vscode_cobol/commit/3e4bf8d6c916cb1) *2021-04-12 20:14:53*
+
+
+## 7.4.12
+
+**continue work on forward references**
+
+* [5d907713dc95a5b](https://github.com/spgennard/vscode_cobol/commit/5d907713dc95a5b) *2021-04-12 20:13:37*
+
+**restrict picking up of forward references**
+
+* [c719f11449f712d](https://github.com/spgennard/vscode_cobol/commit/c719f11449f712d) *2021-04-12 19:02:35*
+
+**Update CHANGELOG.md**
+
+* [d3258bfaf9e3265](https://github.com/spgennard/vscode_cobol/commit/d3258bfaf9e3265) *2021-04-11 21:23:44*
+
+
+## 7.4.11
+
+**tidy up**
+
+* [0a50a985be0ef2a](https://github.com/spgennard/vscode_cobol/commit/0a50a985be0ef2a) *2021-04-11 20:24:51*
+
+**ensure we don't get duplicate interface, enums in the cache**
+
+* [430c3d25811f8a3](https://github.com/spgennard/vscode_cobol/commit/430c3d25811f8a3) *2021-04-11 20:20:22*
+
+**tweak $set and tidy up COBOL/Messages on startup**
+
+* [3b3a8fb9a86f61c](https://github.com/spgennard/vscode_cobol/commit/3b3a8fb9a86f61c) *2021-04-11 19:56:28*
+
+**more updates for $set and readonly semantic colouring**
+
+* [533c8bca06bfdc4](https://github.com/spgennard/vscode_cobol/commit/533c8bca06bfdc4) *2021-04-11 11:39:25*
+
+**pickup variables for references in value clauses**
+
+* [4f0395372233dd5](https://github.com/spgennard/vscode_cobol/commit/4f0395372233dd5) *2021-04-10 22:20:17*
+
+**Update CHANGELOG.md**
+
+* [9478b604bbd5a8a](https://github.com/spgennard/vscode_cobol/commit/9478b604bbd5a8a) *2021-04-10 20:36:05*
+
+
+## 7.4.10
+
+**prep for delivery**
+
+* [d6d80b609c90066](https://github.com/spgennard/vscode_cobol/commit/d6d80b609c90066) *2021-04-10 20:35:37*
+
+**remove unused var**
+
+* [816bfcb6539ca96](https://github.com/spgennard/vscode_cobol/commit/816bfcb6539ca96) *2021-04-10 20:22:49*
+
+**remove duplicate find from source definition when "call xx" is found**
+
+* [e3ff120999928c9](https://github.com/spgennard/vscode_cobol/commit/e3ff120999928c9) *2021-04-10 20:20:29*
+
+**Update CHANGELOG.md**
+
+* [14000fac19d8502](https://github.com/spgennard/vscode_cobol/commit/14000fac19d8502) *2021-04-08 22:58:51*
+
+
+## 7.4.8
+
+**comment out unused lines**
+
+* [d1c974eb1ac064a](https://github.com/spgennard/vscode_cobol/commit/d1c974eb1ac064a) *2021-04-08 22:58:19*
+
+**Update CHANGELOG.md**
+
+* [67ef83e93a293fc](https://github.com/spgennard/vscode_cobol/commit/67ef83e93a293fc) *2021-04-08 22:55:29*
+
+**add extra diag messages**
+
+* [28463c6608dcdb3](https://github.com/spgennard/vscode_cobol/commit/28463c6608dcdb3) *2021-04-08 22:55:00*
+
+**delivery it**
+
+* [6f9730f74eedce6](https://github.com/spgennard/vscode_cobol/commit/6f9730f74eedce6) *2021-04-08 22:16:23*
+
+**add warning message for untested environments**
+
+* [47511c466e974cf](https://github.com/spgennard/vscode_cobol/commit/47511c466e974cf) *2021-04-08 22:15:56*
+
+**ensure OVSX envs are not set**
+
+* [b140ac573d04970](https://github.com/spgennard/vscode_cobol/commit/b140ac573d04970) *2021-04-08 21:37:07*
+
+**update**
+
+* [c070aa4d1b8bddc](https://github.com/spgennard/vscode_cobol/commit/c070aa4d1b8bddc) *2021-04-08 20:53:56*
+
+**tidy and add a warning message**
+
+* [6a0d01881c74516](https://github.com/spgennard/vscode_cobol/commit/6a0d01881c74516) *2021-04-08 18:32:50*
+
+**don't blank but set it something bad**
+
+* [85933ffacd596f9](https://github.com/spgennard/vscode_cobol/commit/85933ffacd596f9) *2021-04-07 21:07:15*
+
+**tweak package.json to ensure publisher is set before hand**
+
+* [93aa195fe6850a2](https://github.com/spgennard/vscode_cobol/commit/93aa195fe6850a2) *2021-04-07 21:04:48*
+
+**add pre-commit hooks**
+
+* [7660bb2dbea8126](https://github.com/spgennard/vscode_cobol/commit/7660bb2dbea8126) *2021-04-07 21:00:51*
+
+**add pre-commit hook**
+
+* [cdf164f3cf54263](https://github.com/spgennard/vscode_cobol/commit/cdf164f3cf54263) *2021-04-07 20:56:19*
+
+**Update CHANGELOG.md**
+
+* [872bdf248d15729](https://github.com/spgennard/vscode_cobol/commit/872bdf248d15729) *2021-04-07 20:35:47*
+
+
+## 7.4.7
+
+**prep**
+
+* [4e212a42d5f5faf](https://github.com/spgennard/vscode_cobol/commit/4e212a42d5f5faf) *2021-04-07 20:34:23*
+
+**Update CHANGELOG.md**
+
+* [2266e219c4be578](https://github.com/spgennard/vscode_cobol/commit/2266e219c4be578) *2021-04-07 20:00:49*
+
+**wire up**
+
+* [995db58506cb220](https://github.com/spgennard/vscode_cobol/commit/995db58506cb220) *2021-04-07 20:00:07*
+
+**prepare for delivery**
+
+* [ecb9561f2365de3](https://github.com/spgennard/vscode_cobol/commit/ecb9561f2365de3) *2021-04-07 19:51:31*
+
+**add some support for references in level 66 lines**
+
+* [d54f82131d9b27a](https://github.com/spgennard/vscode_cobol/commit/d54f82131d9b27a) *2021-04-07 17:50:00*
+
+**version updates**
+
+* [94adc043512acdd](https://github.com/spgennard/vscode_cobol/commit/94adc043512acdd) *2021-04-06 21:40:40*
+
+**Update CHANGELOG.md**
+
+* [6eb6ca8f4e917d0](https://github.com/spgennard/vscode_cobol/commit/6eb6ca8f4e917d0) *2021-04-06 21:35:35*
+
+
 ## 7.4.6
 
 **continue work on references & prepare del**
