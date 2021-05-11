@@ -2,7 +2,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import { VSCodeSourceHandler } from "./vscodesourcehandler";
-import { FileType, TextDocument, Uri, window, workspace } from 'vscode';
+import { FileType, TextDocument, Uri, window, workspace, debug } from 'vscode';
 import COBOLSourceScanner, { COBOLToken, COBOLTokenStyle, EmptyCOBOLSourceScannerEventHandler, ICOBOLSourceScanner, ICOBOLSourceScannerEvents, SharedSourceReferences } from "./cobolsourcescanner";
 import { InMemoryGlobalCacheHelper, InMemoryGlobalSymbolCache } from "./globalcachehelper";
 
@@ -50,6 +50,7 @@ export class COBOLSymbolTableGlobalEventHelper implements ICOBOLSourceScannerEve
         this.st.lastModifiedTime = qp.lastModifiedTime;
 
         if (this.st?.fileName !== undefined && this.st.lastModifiedTime !== undefined) {
+            COBOLWorkspaceSymbolCacheHelper.removeAllCopybookReferences(this.st?.fileName);
             COBOLWorkspaceSymbolCacheHelper.removeAllPrograms(this.st?.fileName);
             COBOLWorkspaceSymbolCacheHelper.removeAllProgramEntryPoints(this.st?.fileName)
             COBOLWorkspaceSymbolCacheHelper.removeAllTypes(this.st?.fileName);
@@ -68,6 +69,12 @@ export class COBOLSymbolTableGlobalEventHelper implements ICOBOLSourceScannerEve
         }
 
         switch (token.tokenType) {
+            case COBOLTokenStyle.CopyBook:
+                COBOLWorkspaceSymbolCacheHelper.addReferencedCopybook(token.tokenName, this.st.fileName);
+                break;
+            case COBOLTokenStyle.CopyBookInOrOf:
+                COBOLWorkspaceSymbolCacheHelper.addReferencedCopybook(token.tokenName, this.st.fileName);
+                break;
             case COBOLTokenStyle.File:
                 COBOLWorkspaceSymbolCacheHelper.addSymbol(this.st.fileName, token.tokenNameLower, token.startLine);
                 break;
@@ -126,6 +133,14 @@ export default class VSCOBOLSourceScanner {
             }
         }
 
+        // in memory document is out of sync with the on-disk document, so reparsing it
+        // will give in-consistent results, especially with the debugg
+        if (document.isDirty && debug.activeDebugSession !== undefined) {
+            logMessage("Source code has changed during debugging, in memory scanning suspended");
+            logMessage(` ID=${debug.activeDebugSession.id}, Name=${debug.activeDebugSession.name}, Type=${debug.activeDebugSession.type}`);
+            return undefined;
+        }
+
         /* grab, the file parse it can cache it */
         if (cachedObject === undefined) {
             try {
@@ -143,7 +158,7 @@ export default class VSCOBOLSourceScanner {
                 const sourceHandler = new VSCodeSourceHandler(document, false);
                 const cacheData = sourceHandler.getIsSourceInWorkSpace();
                 const qcpd = new COBOLSourceScanner(sourceHandler, config,
-                    cacheDirectory === undefined ? "" : cacheDirectory, new SharedSourceReferences(true),
+                    cacheDirectory === undefined ? "" : cacheDirectory, new SharedSourceReferences(config,true),
                     config.parse_copybooks_for_references,
                     cacheData ? new COBOLSymbolTableGlobalEventHelper(config) : EmptyCOBOLSourceScannerEventHandler.Default,
                     ExternalFeatures);

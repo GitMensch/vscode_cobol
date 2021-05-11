@@ -6,7 +6,7 @@
 	],
 	"settings": {
 		"[COBOL]": {
-			"editor.semanticHighlighting.enabled": false,
+			"editor.semanticHighlighting.enabled": true,
 			"files.autoGuessEncoding": false,
 			"editor.snippetSuggestions": "bottom",
 			"editor.renderIndentGuides": false,
@@ -30,6 +30,7 @@
 		],
 		"coboleditor.metadata_entrypoints": [],
 		"coboleditor.metadata_types": [],
-		"coboleditor.metadata_files": []
+		"coboleditor.metadata_files": [],
+		"coboleditor.metadata_knowncopybooks": []
 	}
 }

@@ -49,6 +49,7 @@ import { COBOLWorkspaceSymbolCacheHelper } from './cobolworkspacecache';
 import { COBOLPreprocessorHelper } from './cobolsourcescanner';
 import { SourceItem } from './sourceItem';
 import { VSSemanticProvider } from './vssemanticprovider';
+import { VSPPCodeLens } from './vsppcodelens';
 
 export const progressStatusBarItem: StatusBarItem = window.createStatusBarItem(StatusBarAlignment.Left);
 
@@ -665,6 +666,7 @@ export async function activate(context: ExtensionContext): Promise<void> {
         const md_eps = event.affectsConfiguration("coboleditor.metadata_entrypoints");
         const md_types = event.affectsConfiguration("coboleditor.metadata_types");
         const md_metadata_files = event.affectsConfiguration("coboleditor.metadata_files");
+        const md_metadata_knowncopybooks = event.affectsConfiguration("coboleditor.metadata_knowncopybooks");
         const enable_semantic_token_provider = event.affectsConfiguration("coboleditor.enable_semantic_token_provider");
         if (updated) {
             const settings: ICOBOLSettings = VSCOBOLConfiguration.init();
@@ -692,6 +694,10 @@ export async function activate(context: ExtensionContext): Promise<void> {
             if (enable_semantic_token_provider) {
                 vscode.window.showInformationMessage("The configuration setting 'coboleditor.enable_semantic_token_provider' has changed but you may not see the affects until you have either close/reload your documents or restarted this session");
             }
+
+            if (md_metadata_knowncopybooks) {
+                COBOLWorkspaceSymbolCacheHelper.loadGlobalKnownCopybooksFromArray(settings.metadata_knowncopybooks,true);
+            }
         }
     });
     context.subscriptions.push(onDidChangeConfiguration);
@@ -707,7 +713,8 @@ export async function activate(context: ExtensionContext): Promise<void> {
     COBOLWorkspaceSymbolCacheHelper.loadGlobalEntryCacheFromArray(settings.metadata_entrypoints, false);
     COBOLWorkspaceSymbolCacheHelper.loadGlobalTypesCacheFromArray(settings.metadata_types, false);
     COBOLWorkspaceSymbolCacheHelper.loadFileCacheFromArray(ExternalFeatures, settings.metadata_files, false);
-
+    COBOLWorkspaceSymbolCacheHelper.loadGlobalKnownCopybooksFromArray(settings.metadata_knowncopybooks,false);
+    
     const insertIgnoreCommentLineCommand = commands.registerCommand("cobolplugin.insertIgnoreCommentLine", function (docUri: vscode.Uri, offset: number, code: string) {
         cobolfixer.insertIgnoreCommentLine(docUri, offset, code);
     });
@@ -1282,6 +1289,14 @@ export async function activate(context: ExtensionContext): Promise<void> {
         });
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const actionCodelens = commands.registerCommand("coboleditor.ppcodelenaction", (args: string) => {
+        VSPPCodeLens.actionCodeLens(args);
+    });
+    context.subscriptions.push(actionCodelens);
+    const codelensProvider = new VSPPCodeLens();
+    languages.registerCodeLensProvider(getAllCobolSelectors(), codelensProvider);
+    
     if (settings.process_metadata_cache_on_start) {
         const depMode = settings.cache_metadata !== CacheDirectoryStrategy.Off;
         const pm = VSCobScanner.processAllFilesInWorkspaceOutOfProcess(false, depMode);

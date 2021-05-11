@@ -149,13 +149,6 @@ export class COBOLFileUtils {
 }
 
 export class COBOLCopyBookProvider implements vscode.DefinitionProvider {
-
-    readonly sectionRegEx = new RegExp('[0-9a-zA-Z][a-zA-Z0-9-_]*');
-    readonly variableRegEx = new RegExp('[#0-9a-zA-Z][a-zA-Z0-9-_]*');
-    readonly callRegEx = new RegExp('[0-9a-zA-Z][a-zA-Z0-9-_]*');
-    readonly classRegEx = new RegExp('[0-9a-zA-Z][a-zA-Z0-9-_]*');
-    readonly methodRegEx = new RegExp('[0-9a-zA-Z][a-zA-Z0-9-_]*');
-
     public provideDefinition(document: vscode.TextDocument,
         position: vscode.Position,
         token: vscode.CancellationToken): vscode.ProviderResult<vscode.Definition> {
@@ -169,7 +162,7 @@ export class COBOLCopyBookProvider implements vscode.DefinitionProvider {
         const text = line.text;
         const textLower = text.toLowerCase().replace("\t", " ");
         let filename = this.extractCopyBoolFilename(text);
-        let inOrOfPos = -1;
+        let inOrOfPos = 0;
 
         const activeTextEditor = vscode.window.activeTextEditor;
         if (activeTextEditor && filename === undefined) {
@@ -193,9 +186,10 @@ export class COBOLCopyBookProvider implements vscode.DefinitionProvider {
             if (inOrOfPos === -1) {
                 inOrOfPos = textLower.indexOf(" of ");
             }
+            inOrOfPos !== -1 ? inOrOfPos += 4 : inOrOfPos = 0;
         }
 
-        let inDirectory = inOrOfPos !== -1 ? text.substr(2 + inOrOfPos) : "";
+        let inDirectory = inOrOfPos !== 0 ? text.substr(inOrOfPos) : "";
 
         if (inDirectory.length !== 0) {
             let inDirItems = inDirectory.trim();

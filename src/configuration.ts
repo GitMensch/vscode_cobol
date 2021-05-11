@@ -45,6 +45,7 @@ export class VSCOBOLConfiguration {
         vsconfig.linter_house_standards_rules = getlinter_house_standards_rules();
         vsconfig.linter_mark_as_information = getBoolean("linter_mark_as_information", true);
         vsconfig.linter_ignore_section_before_entry = getBoolean("linter_ignore_section_before_entry", true);
+        vsconfig.linter_ignore_missing_copybook = getBoolean("linter_ignore_missing_copybook", false);
         vsconfig.ignore_unsafe_extensions = getBoolean("ignore_unsafe_extensions", false);
         vsconfig.coboldoc_workspace_folder = getCoboldoc_workspace_folder();
         vsconfig.scan_comments_for_hints = getBoolean("scan_comments_for_hints", false);
@@ -68,8 +69,9 @@ export class VSCOBOLConfiguration {
         vsconfig.metadata_entrypoints = getmetadata_entrypoints(vsconfig);
         vsconfig.metadata_types = getmetadata_types(vsconfig);
         vsconfig.metadata_files = getmetadata_files(vsconfig);
-
+        vsconfig.metadata_knowncopybooks = getmetadata_knowncopybooks(vsconfig);
         vsconfig.enable_semantic_token_provider = getBoolean('enable_semantic_token_provider', false);
+        vsconfig.process_replace_verb = getBoolean('process_replace_verb', false);
         vsconfig.preprocessor_extensions = getpreprocessor_extensions();
         return vsconfig;
     }
@@ -384,6 +386,21 @@ function getmetadata_files(config:ICOBOLSettings): string[] {
     }
 
     return metadata_files;
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+function getmetadata_knowncopybooks(config:ICOBOLSettings): string[] {
+    if (config.maintain_metadata_cache === false) {
+        return [];
+    }
+
+    const editorConfig = workspace.getConfiguration('coboleditor');
+    let metadata_knowncopybooks = editorConfig.get<string[]>('metadata_knowncopybooks');
+    if (!metadata_knowncopybooks || (metadata_knowncopybooks !== null && metadata_knowncopybooks.length === 0)) {
+        metadata_knowncopybooks = [];
+    }
+
+    return metadata_knowncopybooks;
 }
 
 function getpreprocessor_extensions(): string[] {
