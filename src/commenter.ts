@@ -1,7 +1,7 @@
 'use strict';
 
 import { Position, Range, TextDocument, TextEditor, TextEditorEdit, Selection, window } from 'vscode';
-import { VSCOBOLConfiguration } from './configuration';
+import { VSCOBOLConfiguration } from './vsconfiguration';
 import { ESourceFormat } from './externalfeatures';
 import VSCOBOLSourceScanner from './vscobolscanner';
 
@@ -139,7 +139,8 @@ export function processCommentLine():void {
         const sel = editor.selections;
         let sourceformatStyle: ESourceFormat = ESourceFormat.variable;
 
-        const gcp = VSCOBOLSourceScanner.getCachedObject(doc,VSCOBOLConfiguration.get());
+        const settings = VSCOBOLConfiguration.get();
+        const gcp = VSCOBOLSourceScanner.getCachedObject(doc,settings);
         if (gcp !== undefined) {
             sourceformatStyle = gcp.sourceFormat;
         }

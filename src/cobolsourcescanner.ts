@@ -325,7 +325,7 @@ class Token {
 
     public currentToken = "";
     public prevToken = "";
-    public prevTokenToken: Token|undefined = undefined;
+    public prevTokenToken: Token | undefined = undefined;
     public currentTokenLower = "";
     public prevTokenLower = "";
     public currentCol = 0;
@@ -457,15 +457,67 @@ class Token {
     }
 }
 
+export class replaceToken {
+    private replaceToken: string;
+    public rex4wordreplace: RegExp;
+
+    constructor(replaceTokenRaw: string, tokenState: IReplaceState) {
+        this.replaceToken = this.escapeRegExp(replaceTokenRaw);
+        if (tokenState.isPseudoTextDelimiter) {
+            this.rex4wordreplace = new RegExp(`${this.replaceToken}`, 'g');
+        } else {
+            this.rex4wordreplace = new RegExp(`\\b${this.replaceToken}\\b`, 'g');
+        }
+    }
+
+    private escapeRegExp(text: string) {
+        return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+    }
+}
+
+export interface IReplaceState {
+    isPseudoTextDelimiter: boolean;
+}
+
+export class replaceState implements IReplaceState {
+    public isPseudoTextDelimiter = false;
+}
+
+export class copybookState implements IReplaceState {
+    public sourceHandler: ISourceHandler | undefined = undefined;
+    public copyBook = "";
+    public trimmedCopyBook = "";
+    public isIn = false;
+    public isOf = false;
+    public isReplacing = false;
+    public isReplacingBy = false;
+    public startLineNumber = 0;
+    public endLineNumber = 0;
+    public endCol = 0;
+    public startCol = 0;
+    public line = ""
+    public copyVerb = "";
+    public literal2 = "";
+    public library_name = "";
+    public replaceLeft = "";
+    public copyReplaceMap = new Map<string, replaceToken>();
+    public isTrailing = false;
+    public isLeading = false;
+    public fileName = "";
+    public isPseudoTextDelimiter = false;
+}
+
 export class COBOLCopybookToken {
-    static Null: COBOLCopybookToken = new COBOLCopybookToken(COBOLToken.Null, true);
+    static Null: COBOLCopybookToken = new COBOLCopybookToken(COBOLToken.Null, true, new copybookState());
 
     public readonly token: COBOLToken;
     public parsed: boolean;
+    public statementInformation: copybookState;
 
-    constructor(token: COBOLToken, parsed: boolean) {
+    constructor(token: COBOLToken, parsed: boolean, statementInformation: copybookState) {
         this.token = token;
         this.parsed = parsed;
+        this.statementInformation = statementInformation;
     }
 }
 
@@ -551,6 +603,8 @@ class ParseState {
     inProcedureDivision: boolean;
     inDeclaratives: boolean;
     inReplace: boolean;
+    replace_state: replaceState;
+
     inCopy: boolean;
     replaceLeft: string;
     replaceRight: string;
@@ -566,11 +620,13 @@ class ParseState {
 
     entryPointCount: number;
 
-    replaceMap: Map<string, string>;
+    replaceMap: Map<string, replaceToken>;
 
-    process_replace_verb: boolean;
+    enable_text_replacement: boolean;
 
-    current_copybook_state: copybookStatement;
+    copybook_state: copybookState;
+
+    inCopyStartColumn: number;
 
     constructor(configHandler: ICOBOLSettings) {
         this.currentDivision = COBOLToken.Null;
@@ -604,14 +660,15 @@ class ParseState {
         this.prevEndsWithDot = false;
         this.currentLineIsComment = false;
         this.inReplace = false;
+        this.replace_state = new replaceState();
         this.inCopy = false;
         this.captureReplaceLeft = true;
         this.replaceLeft = "";
         this.replaceRight = "";
-        this.replaceMap = new Map<string, string>();
-        this.process_replace_verb = configHandler.process_replace_verb;
-        this.current_copybook_state = new copybookStatement();
-
+        this.replaceMap = new Map<string, replaceToken>();
+        this.enable_text_replacement = configHandler.enable_text_replacement;
+        this.copybook_state = new copybookState();
+        this.inCopyStartColumn = 0;
     }
 }
 
@@ -646,6 +703,10 @@ export class CallTargetInformation {
     }
 }
 
+export interface ICOBOLSourceScannerEventer {
+    sendMessage(message:string):void;
+}
+
 export interface ICOBOLSourceScannerEvents {
     start(qp: ICOBOLSourceScanner): void;
     processToken(token: COBOLToken): void;
@@ -657,7 +718,7 @@ export interface ICOBOLSourceScanner {
     lastModifiedTime: BigInt;
     copyBooksUsed: Map<string, COBOLCopybookToken>;
     // tokensInOrder: COBOLToken[];
-    cacheDirectory: string;
+    deprecatedCacheDirectory: string;
     workspaceFile: COBOLWorkspaceFile;
 }
 
@@ -733,7 +794,7 @@ export default class COBOLSourceScanner implements ICommentCallback, ICOBOLSourc
     parseHint_LocalStorageFiles: string[] = [];
     parseHint_ScreenSectionFiles: string[] = [];
 
-    readonly cacheDirectory: string;
+    readonly deprecatedCacheDirectory: string;
 
     private eventHandler: ICOBOLSourceScannerEvents;
 
@@ -753,23 +814,6 @@ export default class COBOLSourceScanner implements ICommentCallback, ICOBOLSourc
         return new COBOLSourceScanner(sourceHandler,
             configHandler,
             "",
-            new SharedSourceReferences(configHandler, true),
-            parse_copybooks_for_references,
-            eventHandler,
-            externalFeatures
-        );
-    }
-
-    public static ParseCached(sourceHandler: ISourceHandler,
-        configHandler: ICOBOLSettings,
-        cacheDirectory: string,
-        parse_copybooks_for_references: boolean,
-        eventHandler: ICOBOLSourceScannerEvents,
-        externalFeatures: IExternalFeatures
-    ): COBOLSourceScanner {
-        return new COBOLSourceScanner(sourceHandler,
-            configHandler,
-            cacheDirectory,
             new SharedSourceReferences(configHandler, true),
             parse_copybooks_for_references,
             eventHandler,
@@ -809,7 +853,7 @@ export default class COBOLSourceScanner implements ICommentCallback, ICOBOLSourc
         this.sourceHandler = sourceHandler;
         this.id = sourceHandler.getUriAsString();
         this.configHandler = configHandler;
-        this.cacheDirectory = cacheDirectory;
+        this.deprecatedCacheDirectory = cacheDirectory;
         this.filename = path.normalize(filename);
         this.ImplicitProgramId = path.basename(filename, path.extname(filename));
         this.parse_copybooks_for_references = parse_copybooks_for_references;
@@ -1063,11 +1107,11 @@ export default class COBOLSourceScanner implements ICommentCallback, ICOBOLSourc
 
                         const currentOutlineView = state.ignoreInOutlineView;
                         const current_parse_copybooks_for_references = this.parse_copybooks_for_references;
-                        const current_process_replace_verb = configHandler.process_replace_verb;
+                        const current_enable_text_replacement = configHandler.enable_text_replacement;
 
                         this.parse_copybooks_for_references = false;
                         state.ignoreInOutlineView = true;
-                        state.process_replace_verb = false;
+                        state.enable_text_replacement = false;
 
                         try {
                             for (const preProcLine of preProcLines) {
@@ -1084,7 +1128,7 @@ export default class COBOLSourceScanner implements ICommentCallback, ICOBOLSourc
                         }
                         finally {
                             state.ignoreInOutlineView = currentOutlineView;
-                            state.process_replace_verb = current_process_replace_verb;
+                            state.enable_text_replacement = current_enable_text_replacement;
                             this.parse_copybooks_for_references = current_parse_copybooks_for_references;
                         }
 
@@ -1244,7 +1288,7 @@ export default class COBOLSourceScanner implements ICommentCallback, ICOBOLSourc
         ctoken.ignoreInOutlineView = state.ignoreInOutlineView;
         ctoken.inSection = this.sourceReferences.state.currentSection;
 
-        if (ctoken.ignoreInOutlineView || tokenType == COBOLTokenStyle.ImplicitProgramId) {
+        if (ctoken.ignoreInOutlineView || tokenType === COBOLTokenStyle.ImplicitProgramId) {
             this.tokensInOrder.push(ctoken);
             this.eventHandler.processToken(ctoken);
             return ctoken;
@@ -1629,12 +1673,13 @@ export default class COBOLSourceScanner implements ICommentCallback, ICOBOLSourc
         this.constantsOrVariables.set(lowerCaseVariable, tokens);
     }
 
-    private cleanupReplaceToken(token: string): string {
+    private cleanupReplaceToken(token: string, rstate: IReplaceState): string {
         if (token.endsWith(",")) {
             token = token.substr(0, token.length - 1);
         }
 
         if (token.startsWith("==") && token.endsWith("==")) {
+            rstate.isPseudoTextDelimiter = true;
             return token.substring(2, token.length - 2);
         }
 
@@ -1659,27 +1704,34 @@ export default class COBOLSourceScanner implements ICommentCallback, ICOBOLSourc
                     continue;
                 }
 
-                // fakeup a replace algorithm
+                // fakeup a replace algorithmf
                 if (replaceOn) {
+                    let rightLine = line.substr(token.currentCol);
+                    const rightLineOrg = line.substr(token.currentCol);
                     for (const [k, r] of state.replaceMap) {
-                        if (tcurrent.startsWith(k)) {
-                            const rtext = r+tcurrent.substr(k.length);
-                            if (rtext !== undefined) {
-                                const lastTokenId = this.tokensInOrder.length;
-                                const newLine = rtext + " " + line.substr(token.currentCol + token.currentToken.length);
-                                const newToken = new Token(newLine as string, new Token(token.prevToken,undefined));
-                                const retToken = this.processToken(lineNumber, newToken, newLine, replaceOn);
+                        rightLine = rightLine.replace(r.rex4wordreplace, k);
+                    }
 
-                                // ensure any new token match the original soure
-                                if (lastTokenId !== this.tokensInOrder.length) {
-                                    for (let ltid = lastTokenId; ltid < this.tokensInOrder.length; ltid++) {
-                                        const addedToken = this.tokensInOrder[ltid];
-                                        addedToken.startColumn = token.currentCol;
-                                        addedToken.endColumn = token.currentCol + tcurrent.length;
-                                    }
+                    if (rightLine !== rightLineOrg) {
+                        try {
+                            const leftLine = line.substr(0, token.currentCol)
+
+                            this.sourceHandler.setUpdatedLine(lineNumber, leftLine + rightLine);
+                            const lastTokenId = this.tokensInOrder.length;
+                            const newToken = new Token(rightLine as string, new Token(token.prevToken, undefined));
+                            const retToken = this.processToken(lineNumber, newToken, rightLine, false);
+
+                            // ensure any new token match the original soure
+                            if (lastTokenId !== this.tokensInOrder.length) {
+                                for (let ltid = lastTokenId; ltid < this.tokensInOrder.length; ltid++) {
+                                    const addedToken = this.tokensInOrder[ltid];
+                                    addedToken.startColumn = token.currentCol;
+                                    addedToken.endColumn = token.currentCol + tcurrent.length;
                                 }
-                                return retToken;
                             }
+                            return retToken;
+                        } catch (e) {
+                            this.externalFeatures.logException("replace", e);
                         }
                     }
                 }
@@ -1809,7 +1861,8 @@ export default class COBOLSourceScanner implements ICommentCallback, ICOBOLSourc
                                     state.replaceRight += tcurrent;
                                 }
                                 if (!state.captureReplaceLeft && tcurrent.endsWith("==")) {
-                                    state.replaceMap.set(this.cleanupReplaceToken("" + state.replaceLeft), this.cleanupReplaceToken("" + state.replaceRight));
+                                    state.replaceMap.set(this.cleanupReplaceToken("" + state.replaceRight, state.replace_state),
+                                        new replaceToken(this.cleanupReplaceToken("" + state.replaceLeft, state.replace_state), state.replace_state));
                                     state.replaceLeft = state.replaceRight = "";
                                     state.captureReplaceLeft = true;
                                 }
@@ -1819,7 +1872,7 @@ export default class COBOLSourceScanner implements ICommentCallback, ICOBOLSourc
                     }
 
                     if (state.inCopy) {
-                        const cbState = state.current_copybook_state;
+                        const cbState = state.copybook_state;
                         switch (tcurrentLower) {
                             case "":
                                 break;
@@ -1861,18 +1914,23 @@ export default class COBOLSourceScanner implements ICommentCallback, ICOBOLSourc
                                     break;
                                 }
                                 if (cbState.isReplacingBy) {
-                                    cbState.replaceMap.set(this.cleanupReplaceToken("" + cbState.replaceLeft), this.cleanupReplaceToken("" + tcurrent));
+                                    if (this.configHandler.enable_text_replacement) {
+                                        cbState.copyReplaceMap.set(
+                                            this.cleanupReplaceToken("" + tcurrent, cbState),
+                                            new replaceToken(this.cleanupReplaceToken("" + cbState.replaceLeft, cbState), cbState));
+                                    }
                                     cbState.isReplacingBy = false;
                                     cbState.isReplacing = true;
                                     cbState.isLeading = false;
                                     cbState.isTrailing = false;
+                                    cbState.replaceLeft = "";
                                     break;
                                 }
                                 if (tcurrentLower.length > 0 && !cbState.isOf && !cbState.isIn) {
                                     cbState.copyBook = tcurrent;
                                     cbState.trimmedCopyBook = this.trimLiteral(tcurrentLower);
-                                    cbState.lineNumber = lineNumber;
-                                    cbState.tcurrentCurrentCol = token.currentCol;
+                                    cbState.startLineNumber = lineNumber;
+                                    cbState.startCol = state.inCopyStartColumn; // stored when 'copy' is seen
                                     cbState.line = line;
                                     break;
                                 }
@@ -1887,8 +1945,11 @@ export default class COBOLSourceScanner implements ICommentCallback, ICOBOLSourc
                         state.addReferencesDuringSkipToTag = false;
 
                         if (state.inCopy) {
-                            this.processCopyBook(state.current_copybook_state);
+                            state.copybook_state.endLineNumber = lineNumber;
+                            state.copybook_state.endCol = token.currentCol + token.currentToken.length;
+                            this.processCopyBook(state.copybook_state);
                         }
+                        state.inCopy = false;
                     }
                     continue;
                 }
@@ -1932,7 +1993,7 @@ export default class COBOLSourceScanner implements ICommentCallback, ICOBOLSourc
                 }
 
                 //remember replace
-                if (state.process_replace_verb && currentLower === 'replace') {
+                if (state.enable_text_replacement && currentLower === 'replace') {
                     state.inReplace = true;
                     state.skipToDot = true;
                     state.captureReplaceLeft = true;
@@ -2003,7 +2064,7 @@ export default class COBOLSourceScanner implements ICommentCallback, ICOBOLSourc
                     let entryStatement = prevPlusCurrent;
                     const trimmedCurrent = this.trimLiteral(current);
                     const nextSTokenOrBlank = token.nextSTokenOrBlank().currentToken;
-                    if (nextSTokenOrBlank == "&") {
+                    if (nextSTokenOrBlank === "&") {
                         entryStatement = prevToken + " " + token.compoundItems(trimmedCurrent, this);
                     }
                     const ctoken = this.newCOBOLToken(COBOLTokenStyle.EntryPoint, lineNumber, line, tcurrentCurrentCol, trimmedCurrent, entryStatement, state.currentDivision);
@@ -2202,9 +2263,11 @@ export default class COBOLSourceScanner implements ICommentCallback, ICOBOLSourc
 
                 //remember copy
                 if (currentLower === 'copy') {
+                    state.copybook_state = new copybookState();
                     state.inCopy = true;
+                    state.inCopyStartColumn = token.currentCol;
                     state.skipToDot = true;
-                    state.current_copybook_state.copyVerb = current;
+                    state.copybook_state.copyVerb = current;
                     continue;
                 }
 
@@ -2456,14 +2519,14 @@ export default class COBOLSourceScanner implements ICommentCallback, ICOBOLSourc
     }
 
 
-    private processCopyBook(cbInfo: copybookStatement) {
+    private processCopyBook(cbInfo: copybookState) {
         const state: ParseState = this.sourceReferences.state;
 
         let copyToken: COBOLToken = COBOLToken.Null;
         const isIn = cbInfo.isIn;
         const isOf = cbInfo.isOf;
-        const lineNumber = cbInfo.lineNumber;
-        const tcurrentCurrentCol = cbInfo.tcurrentCurrentCol;
+        const lineNumber = cbInfo.startLineNumber;
+        const tcurrentCurrentCol = cbInfo.startCol;
         const line = cbInfo.line;
         const trimmedCopyBook = cbInfo.trimmedCopyBook;
         const copyVerb = cbInfo.copyVerb;
@@ -2485,11 +2548,13 @@ export default class COBOLSourceScanner implements ICommentCallback, ICOBOLSourc
             copyToken = this.newCOBOLToken(COBOLTokenStyle.CopyBook, lineNumber, line, tcurrentCurrentCol, trimmedCopyBook, copyVerb + " " + copyBook, insertInSection);
         }
 
-        // state.current_copybook_state = new copybookStatement();
+        copyToken.endLine = cbInfo.endLineNumber;
+        copyToken.endColumn = cbInfo.endCol;
+
         state.inCopy = false;
 
         if (this.copyBooksUsed.has(trimmedCopyBook) === false) {
-            const copybookToken = new COBOLCopybookToken(copyToken, false);
+            const copybookToken = new COBOLCopybookToken(copyToken, false, cbInfo);
             this.copyBooksUsed.set(trimmedCopyBook, copybookToken);
 
             if (this.sourceReferences !== undefined && this.parse_copybooks_for_references) {
@@ -2503,18 +2568,19 @@ export default class COBOLSourceScanner implements ICommentCallback, ICOBOLSourc
 
                         // add the specific version
                         this.copyBooksUsed.set(fileName, copybookToken);
-                        const qfile = new FileSourceHandler(fileName, false);
+                        const qfile = new FileSourceHandler(fileName);
                         const currentTopLevel = this.sourceReferences.topLevel;
                         const currentIgnoreInOutlineView: boolean = state.ignoreInOutlineView;
                         state.ignoreInOutlineView = true;
                         this.sourceReferences.topLevel = false;
-
                         const prevRepMap = this.sourceReferences.state.replaceMap;
-                        this.sourceReferences.state.replaceMap = cbInfo.replaceMap;
 
+                        if (this.configHandler.enable_text_replacement) {
+                            this.sourceReferences.state.replaceMap = new Map<string, replaceToken>([...cbInfo.copyReplaceMap, ...prevRepMap]);
+                        }
                         // eslint-disable-next-line @typescript-eslint/no-unused-vars
                         const qps = COBOLSourceScanner.ParseUncachedInlineCopybook(qfile, this, this.parse_copybooks_for_references, this.eventHandler, this.externalFeatures);
-
+                        cbInfo.sourceHandler = qps.sourceHandler;
                         this.sourceReferences.state.replaceMap = prevRepMap;
                         this.sourceReferences.topLevel = currentTopLevel;
                         state.ignoreInOutlineView = currentIgnoreInOutlineView;
@@ -2642,7 +2708,7 @@ export default class COBOLSourceScanner implements ICommentCallback, ICOBOLSourc
                                 if (this.copyBooksUsed.has(fileName) === false) {
                                     this.copyBooksUsed.set(fileName, COBOLCopybookToken.Null);
 
-                                    const qfile = new FileSourceHandler(fileName, false);
+                                    const qfile = new FileSourceHandler(fileName);
                                     const currentIgnoreInOutlineView: boolean = this.sourceReferences.state.ignoreInOutlineView;
                                     this.sourceReferences.state.ignoreInOutlineView = true;
                                     this.sourceReferences.topLevel = true;
@@ -2664,24 +2730,4 @@ export default class COBOLSourceScanner implements ICommentCallback, ICOBOLSourc
             }
         }
     }
-}
-
-class copybookStatement {
-    public copyBook = "";
-    public trimmedCopyBook = "";
-    public isIn = false;
-    public isOf = false;
-    public isReplacing = false;
-    public isReplacingBy = false;
-    public lineNumber = 0;
-    public tcurrentCurrentCol = 0;
-    public line = ""
-    public copyVerb = "";
-    public literal2 = "";
-    public library_name = "";
-    public replaceLeft = "";
-    public replaceMap = new Map<string, string>();
-    public isTrailing = false;
-    public isLeading = false;
-    public fileName = "";
 }

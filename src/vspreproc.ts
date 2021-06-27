@@ -2,7 +2,7 @@ import { Extension, extensions } from "vscode";
 import { COBAPIConstants, COBOLPreprocessor } from "./cobapi";
 import { CobApiHandle } from "./cobapiimpl";
 import { COBOLPreprocessorHelper } from "./cobolsourcescanner";
-import { dumpPreProcInfo, ExternalFeatures, logException, logMessage } from "./extension";
+import { ExternalFeatures, VSLogger } from "./extension";
 import { ICOBOLSettings } from "./iconfiguration";
 
 export class VSPreProc {
@@ -23,7 +23,7 @@ export class VSPreProc {
             try {
                 const ppExt = VSPreProc.getExtension(extName);
                 if (ppExt === undefined) {
-                    logMessage(` WARNING: PreProcessors ${extName} not found, continuing without it`);
+                    VSLogger.logMessage(` WARNING: PreProcessors ${extName} not found, continuing without it`);
                     clear = true;
                     break;
                 }
@@ -41,7 +41,7 @@ export class VSPreProc {
                         if (pp.getImplementedVersion() !== COBAPIConstants.COB_API_INTERFACE_VERSION) {
                             failed = true;
                             settings.preprocessor_extensions = [];      // brutal
-                            logMessage(` WARNING: PreProcessors disable due to ${extName} implementing a old version of the interface`);
+                            VSLogger.logMessage(` WARNING: PreProcessors disable due to ${extName} implementing a old version of the interface`);
                         } else {
                             COBOLPreprocessorHelper.preprocessors.set(handle, pp);
                             COBOLPreprocessorHelper.preprocessorsExts.set(extName, handle);
@@ -49,21 +49,21 @@ export class VSPreProc {
                         }
                     } catch {
                         clear = true;
-                        logMessage(` WARNING: PreProcessors disable due to ${extName} causing an error during initialization`);
+                        VSLogger.logMessage(` WARNING: PreProcessors disable due to ${extName} causing an error during initialization`);
                     }
                 } else {
-                    logMessage(` WARNING: PreProcessors ${extName} not found, continuing without it`);
+                    VSLogger.logMessage(` WARNING: PreProcessors ${extName} not found, continuing without it`);
                     clear = true;
                 }
             }
             catch (e) {
                 failed = true;
-                logException(`Unable to get preprocessor : ${extName}`, e);
+                VSLogger.logException(`Unable to get preprocessor : ${extName}`, e);
             }
         }
 
         if (show) {
-            dumpPreProcInfo(settings);
+            VSPreProc.dumpPreProcInfo(settings);
         }
 
         if (clear) {
@@ -94,13 +94,33 @@ export class VSPreProc {
             if (preprocexp?.exports === undefined) {
                 return undefined;
             }
-            logMessage(`Extension ${preprocexp.id} is found, Active=${preprocexp.isActive}`);
+            VSLogger.logMessage(`Extension ${preprocexp.id} is found, Active=${preprocexp.isActive}`);
             return preprocexp.exports as COBOLPreprocessor;
         }
         catch (e) {
-            logMessage(`getCOBOLPreprocessor(${extensionName})`, e);
+            VSLogger.logMessage(`getCOBOLPreprocessor(${extensionName})`, e);
             return undefined;
         }
     }
 
+
+
+    public static dumpPreProcInfo(settings: ICOBOLSettings): void {
+        for (const extName of settings.preprocessor_extensions) {
+            if (COBOLPreprocessorHelper.preprocessorsExts.has(extName)) {
+                const activePreProc = COBOLPreprocessorHelper.preprocessorsExts.get(extName);
+
+                if (activePreProc !== undefined) {
+                    VSLogger.logMessage(` Active preprocessor              : ${activePreProc.id}`);
+                    VSLogger.logMessage(`                                  : ${activePreProc.description}`);
+                    VSLogger.logMessage(`                                  : ${activePreProc.bugReportEmail}`);
+                    VSLogger.logMessage(`                                  : ${activePreProc.bugReportUrl}`);
+                }
+                continue;
+            }
+            VSLogger.logMessage('');
+            VSLogger.logMessage(` Registered preprocessor          : ${extName}`);
+            VSLogger.logMessage('');
+        }
+    }
 }

@@ -1,10 +1,10 @@
 import { CompletionItemProvider, TextDocument, Position, CancellationToken, CompletionItem, CompletionContext, ProviderResult, CompletionList, CompletionItemKind, Range } from 'vscode';
 import VSCOBOLSourceScanner from './vscobolscanner';
-import { ICOBOLSettings, COBOLSettings } from './iconfiguration';
+import { ICOBOLSettings } from './iconfiguration';
 import COBOLSourceScanner, { COBOLToken, camelize } from './cobolsourcescanner';
-import { VSCOBOLConfiguration } from './configuration';
+import { VSCOBOLConfiguration } from './vsconfiguration';
 import TrieSearch from 'trie-search';
-import { performance_now, logMessage, logTimeThreshold } from './extension';
+import { VSExtensionUtils, VSLogger } from './extension';
 import { InMemoryGlobalSymbolCache } from './globalcachehelper';
 
 export class CobolSourceCompletionItemProvider implements CompletionItemProvider {
@@ -75,7 +75,7 @@ export class CobolSourceCompletionItemProvider implements CompletionItemProvider
 
 
     private getItemsFromList(tsearch: TrieSearch, wordToComplete: string, kind: CompletionItemKind): CompletionItem[] {
-        const iconfig: COBOLSettings = VSCOBOLConfiguration.get();
+        const iconfig: ICOBOLSettings = VSCOBOLConfiguration.get();
 
         const includeUpper: boolean = iconfig.intellisense_include_uppercase;
         const includeLower: boolean = iconfig.intellisense_include_lowercase;
@@ -156,7 +156,7 @@ export class CobolSourceCompletionItemProvider implements CompletionItemProvider
     }
 
     private getAllTypes(workToComplete: string): CompletionItem[] {
-        const startsWith = workToComplete.length != 0;
+        const startsWith = workToComplete.length !== 0;
         const items: CompletionItem[] = [];
         const itemMap = new Map<string, CompletionItem>();
 
@@ -213,7 +213,7 @@ export class CobolSourceCompletionItemProvider implements CompletionItemProvider
             return items;
         }
 
-        const startTime = performance_now();
+        const startTime = VSExtensionUtils.performance_now();
         let wordToComplete = '';
         let wordBefore = "";
         let wordBeforeLower = "";
@@ -339,10 +339,10 @@ export class CobolSourceCompletionItemProvider implements CompletionItemProvider
             }
         }
 
-        const totalTimeInMS = performance_now() - startTime;
+        const totalTimeInMS = VSExtensionUtils.performance_now() - startTime;
         const timeTaken = totalTimeInMS.toFixed(2);
-        if (totalTimeInMS > logTimeThreshold) {
-            logMessage(" - CobolSourceCompletionItemProvider took " + timeTaken + " ms");
+        if (totalTimeInMS > VSLogger.logTimeThreshold) {
+            VSLogger.logMessage(" - CobolSourceCompletionItemProvider took " + timeTaken + " ms");
         }
         return items;
     }
@@ -359,7 +359,6 @@ export class CobolSourceCompletionItemProvider implements CompletionItemProvider
         }
 
         return targets;
-
     }
 
 }

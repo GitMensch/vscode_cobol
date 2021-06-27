@@ -1,3 +1,4 @@
+/* eslint-disable class-methods-use-this */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
@@ -13,6 +14,8 @@ export interface IExternalFeatures {
     expandLogicalCopyBookToFilenameOrEmpty(filename: string, inDirectory: string, config: ICOBOLSettings): string;
     getCOBOLSourceFormat(doc: ISourceHandler, config: ICOBOLSettings): ESourceFormat;
     getFullWorkspaceFilename(sdir: string, sdirMs: BigInt): string | undefined;
+    setWorkspaceFolders(folders: string[]):void;
+    getWorkspaceFolders(): string[];
 }
 
 export enum ESourceFormat {
@@ -66,5 +69,13 @@ export class EmptyExternalFeature implements IExternalFeatures {
 
     public getFullWorkspaceFilename(sdir: string, sdirMs: BigInt): string | undefined {
         return undefined;
+    }
+
+    public setWorkspaceFolders(_folders: string[]) {
+        //
+    }
+
+    public getWorkspaceFolders(): string[] {
+        return [];
     }
 }

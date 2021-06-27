@@ -1,17 +1,29 @@
-import util from 'util';
-import path from 'path';
-import fs from 'fs';
+import { parentPort, workerData } from 'worker_threads';
+import { Scanner, workerThreadData } from './cobscanner';
+import { ScanStats } from './cobscannerdata';
+import { ESourceFormat, IExternalFeatures } from './externalfeatures';
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-import { ESourceFormat, IExternalFeatures } from "./externalfeatures";
-import ISourceHandler from "./isourcehandler";
-import { ICOBOLSettings } from "./iconfiguration";
+import * as fs from 'fs';
+import * as path from 'path';
+import util from 'util';
+import ISourceHandler from './isourcehandler';
+import { ICOBOLSettings } from './iconfiguration';
+import { ICOBOLSourceScannerEventer } from './cobolsourcescanner';
 import { COBOLFileUtils } from './fileutils';
 import { getCOBOLSourceFormat } from './sourceformat';
 
-export class ConsoleExternalFeatures implements IExternalFeatures {
-    public static readonly Default = new ConsoleExternalFeatures();
+// class WorkerUtils {
+//     public static msleep(n: number) {
+//         Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, n);
+//     }
+
+//     public static sleep(n: number) {
+//         WorkerUtils.msleep(n * 1000);
+//     }
+// }
+
+export class ThreadConsoleExternalFeatures implements IExternalFeatures {
+    public static readonly Default = new ThreadConsoleExternalFeatures();
 
     public workspaceFolders: string[] = [];
 
@@ -20,11 +32,8 @@ export class ConsoleExternalFeatures implements IExternalFeatures {
     }
 
     public logMessage(message: string): void {
-        if (process.send) {
-            process.send(message);
-        } else {
-            // eslint-disable-next-line no-console
-            console.log(message);
+        if (parentPort !== null) {
+            parentPort.postMessage(message);
         }
 
         return;
@@ -73,7 +82,7 @@ export class ConsoleExternalFeatures implements IExternalFeatures {
         return getCOBOLSourceFormat(doc,config);
     }
 
-    public setWorkspaceFolders(folders: string[]) {
+    public setWorkspaceFolders(folders: string[]):void {
         this.workspaceFolders = folders;
     }
 
@@ -83,20 +92,41 @@ export class ConsoleExternalFeatures implements IExternalFeatures {
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     public getFullWorkspaceFilename(sdir: string, sdirMs: BigInt): string | undefined {
-        if (this.workspaceFolders.length === 0) {
-            this.logMessage("getFullWorkspaceFilename: workspaceFolders.length === 0");
-        }
         for (const folder of this.workspaceFolders) {
             const possibleFile = path.join(folder, sdir);
-            if (ConsoleExternalFeatures.isFile(possibleFile)) {
+            if (ThreadConsoleExternalFeatures.isFile(possibleFile)) {
                 const stat4src = fs.statSync(possibleFile, { bigint: true });
                 if (sdirMs === stat4src.mtimeMs) {
                     return possibleFile;
-                } 
-                this.logMessage(`getFullWorkspaceFilename: found ${possibleFile} ${sdirMs} !== ${stat4src.mtimeMs}`);
+                }
             }
         }
 
         return undefined;
+    }
+}
+
+class threadSender implements ICOBOLSourceScannerEventer {
+    public static Default = new threadSender();
+
+    sendMessage(message: string): void {
+        if (parentPort !== null) {
+            parentPort.postMessage(message);
+        }
+    }
+}
+
+if (parentPort !== null) {
+    try {
+        const features = ThreadConsoleExternalFeatures.Default;
+        const wd: workerThreadData = workerData as workerThreadData;
+        const scanData = wd.scanData;
+        scanData.showStats = false;
+        const sd = new ScanStats();
+        Scanner.transferScanDataToGlobals(scanData, features);
+        Scanner.processFiles(scanData,features, threadSender.Default, sd);
+        parentPort.postMessage(`++${JSON.stringify(sd)}`);
+    } catch (e) {
+        threadSender.Default.sendMessage(e.message);
     }
 }

@@ -76,7 +76,7 @@ Below is an example of *build* task that uses *mycobolproject.sln*.
 {
     "version": "2.0.0",
     "tasks": [ {
-            "label": "build",
+            "label": "Compile: using msbuild (mycobolproject.sln)",
             "type": "shell",
             "command": "msbuild",
             "args": [
@@ -105,7 +105,7 @@ For Net Express/Server Express compilers use the "$mfcobol-errformat3-netx-sx" p
 
 ```json
 {
-    "label": "mf cobol (single file)",
+    "label": "Compile: using cobol (single file)",
     "command": "cobol",
     "args": [
         "${file}",
@@ -142,7 +142,7 @@ For Net Express/Server Express compilers use the "$mfcobol-errformat2-netx-sx" p
 
 ```json
 {
-    "label": "mf cobol (single file)",
+    "label": "Compile: using cobol (single file)",
     "command": "cobol",
     "args": [
         "${file}",
@@ -181,7 +181,7 @@ The example below shows you how you can create a single task to compile one prog
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "cobolit - cobc (single file)",
+            "label": "Compile: cobc (single file)",
             "type": "shell",
             "command": "cobc",
             "args": [
@@ -205,7 +205,7 @@ The example below shows you how you can create a single task to compile one prog
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "acu cobol - ccbl32 (single file)",
+            "label": "Compile: using ccbl32 (single file)",
             "type": "shell",
             "command": "%ACUCOBOL%\\bin\\ccbl32",
             "args": [
@@ -386,13 +386,13 @@ The hint token can be configured by the ```coboleditor.scan_comment_copybook_tok
 It is recommended that the token name remain consistent in your source, otherwise it will make it hard for observers of your source to understand the code.
 
 
-## coboleditor.fileformat
+## coboleditor.fileformat & coboleditor.fileformat_strategy
 
-When ```coboleditor.margin``` is enabled extension will look for "sourceformat" settings (json array) in the header of the source file itself.
+When ```coboleditor.fileformat_strategy``` is set to "normal", the source format will be determined heuristically but can be overriden by either embedded directives with each source file.
 
-However, if you need to tell the extension which file are which particular format, this can be achieved with ```coboleditor.fileformat``` property.
+However, if you need to tell the extension which file(s) are which particular file format, this can be achieved with ```coboleditor.fileformat``` property.
 
-For example, if you want all the files that match ```A*.cbl``` to be fixed and every other *.cbl is free format, you can then use:
+For example, if you want all the files that match ```A*.cbl``` to be fixed and every other ```*.cbl``` is free format, you can then use:
 
 ```json
     "coboleditor.fileformat": [
@@ -406,6 +406,8 @@ For example, if you want all the files that match ```A*.cbl``` to be fixed and e
         }
     ],
 ```
+
+If always use ```fixed``` format you can set ```coboleditor.fileformat_strategy=always_fixed```.
 
 ## Handling code pages
 
@@ -503,6 +505,12 @@ Although this extension does not understand comments in COBOL source files, it c
     }
 }
 ```
+
+## Visual Studio Code Workspace Trust security
+
+When in limited functionality mode the extension disables all functionality that might be use for malicious purposes.
+
+The extension only enables features that allow basic editing, making it ideal for browsing untrusted source.
 
 ## Online resources
 

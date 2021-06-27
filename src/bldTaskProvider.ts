@@ -1,8 +1,7 @@
 import path, { dirname } from 'path';
-import fs from 'fs';
 import * as vscode from 'vscode';
 import { getWorkspaceFolders } from './cobolfolders';
-import { COBOLFileUtils } from './opencopybook';
+import { COBOLFileUtils } from './fileutils';
 
 interface BldScriptDefinition extends vscode.TaskDefinition {
 	arguments: string;
@@ -21,6 +20,10 @@ export class BldScriptTaskProvider implements vscode.TaskProvider {
 
 
 	public provideTasks(): Thenable<vscode.Task[]> | undefined {
+		if (!vscode.workspace.isTrusted) {
+			return undefined;
+		}
+
 		const scriptFilename = this.getFileFromWorkspace();
 		if (scriptFilename === undefined) {
 			return undefined;
@@ -63,6 +66,10 @@ export class BldScriptTaskProvider implements vscode.TaskProvider {
 	}
 
 	public resolveTask(_task: vscode.Task): vscode.Task | undefined {
+		if (!vscode.workspace.isTrusted) {
+			return undefined;
+		}
+
 		const scriptName = this.getFileFromWorkspace();
 
 		// does this workspace have a bld.sh or bld.bat
@@ -73,7 +80,7 @@ export class BldScriptTaskProvider implements vscode.TaskProvider {
 		const task = _task.definition.task;
 
 		if (task) {
-			// resolveTask requires that the same definition object be used.
+			// resolveTask requires that t1he same definition object be used.
 			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			const definition: BldScriptDefinition = <any>_task.definition;
 
@@ -98,7 +105,7 @@ export class BldScriptTaskProvider implements vscode.TaskProvider {
 					const fname = path.join(folder.uri.fsPath, scriptName);
 
 					try {
-						if (fs.existsSync(fname)) {
+						if (COBOLFileUtils.isFile(fname)) {
 							return fname;
 						}
 					}

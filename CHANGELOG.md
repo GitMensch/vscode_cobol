@@ -3,6 +3,592 @@
 
 Changelog for spgennardvscode_cobol.
 
+## 7.6.24
+
+**ensure metadata is not used when extending the mf extension**
+
+ * - leave in memory cache in place
+* [cfd932ee0d2100a](https://github.com/spgennard/vscode_cobol/commit/cfd932ee0d2100a) *2021-06-24 21:56:08*
+
+**Update CHANGELOG.md**
+
+* [a94ba236a9806b0](https://github.com/spgennard/vscode_cobol/commit/a94ba236a9806b0) *2021-06-23 21:59:06*
+
+
+## 7.6.23
+
+**enable a bit more, still wip.. so this might change...**
+
+* [8257e2898ba7538](https://github.com/spgennard/vscode_cobol/commit/8257e2898ba7538) *2021-06-23 21:55:19*
+
+**avoid the possible double flip scenario**
+
+* [0b92792e027d99e](https://github.com/spgennard/vscode_cobol/commit/0b92792e027d99e) *2021-06-23 21:40:49*
+
+**add support for picking up source format from the mf settings**
+
+ * - this enables the commenter to be in-sync
+* [94e04c35840c89d](https://github.com/spgennard/vscode_cobol/commit/94e04c35840c89d) *2021-06-23 20:55:40*
+
+**update**
+
+* [33cbd8f00e6129c](https://github.com/spgennard/vscode_cobol/commit/33cbd8f00e6129c) *2021-06-23 19:41:12*
+
+**Update CHANGELOG.md**
+
+* [f5e8d4a1c6eecac](https://github.com/spgennard/vscode_cobol/commit/f5e8d4a1c6eecac) *2021-06-23 19:40:05*
+
+
+## 7.6.22
+
+**prepare for delivery**
+
+* [17bcf6ba43df05b](https://github.com/spgennard/vscode_cobol/commit/17bcf6ba43df05b) *2021-06-23 19:39:30*
+
+**fix compilation bug introduced by previous refactoring**
+
+ * add support for using the &#x27;real&#x27; Micro Focus extension
+* [a42eaf740ee5b05](https://github.com/spgennard/vscode_cobol/commit/a42eaf740ee5b05) *2021-06-23 17:03:11*
+
+**add dynamic context via settings (WIP)**
+
+* [ca8298a80bd0fc0](https://github.com/spgennard/vscode_cobol/commit/ca8298a80bd0fc0) *2021-06-21 22:02:17*
+
+**add the building block of dual language id support**
+
+* [9e534e131927540](https://github.com/spgennard/vscode_cobol/commit/9e534e131927540) *2021-06-18 21:07:57*
+
+**add lc cobol enabler**
+
+* [5cc5fbff5809614](https://github.com/spgennard/vscode_cobol/commit/5cc5fbff5809614) *2021-06-18 20:58:21*
+
+**update**
+
+* [1e8ea2949fd66c9](https://github.com/spgennard/vscode_cobol/commit/1e8ea2949fd66c9) *2021-06-16 20:03:03*
+
+**Update CHANGELOG.md**
+
+* [9d34bb79b456b65](https://github.com/spgennard/vscode_cobol/commit/9d34bb79b456b65) *2021-06-16 20:01:56*
+
+
+## 7.6.15
+
+**refactor debugger check and allow people using gnucobol language to**
+
+ * bypass the check
+* [78d48f8db25310b](https://github.com/spgennard/vscode_cobol/commit/78d48f8db25310b) *2021-06-16 19:57:30*
+
+**flip scope**
+
+* [7d5fe7ac1e7b4d4](https://github.com/spgennard/vscode_cobol/commit/7d5fe7ac1e7b4d4) *2021-06-16 19:16:36*
+
+**changed missed scope changes**
+
+* [8b89b40e58ecaa1](https://github.com/spgennard/vscode_cobol/commit/8b89b40e58ecaa1) *2021-06-16 19:15:24*
+
+**Update README.md**
+
+ * - make labels easier to read
+* [173fb84333645d4](https://github.com/spgennard/vscode_cobol/commit/173fb84333645d4) *2021-06-16 19:14:28*
+
+**tweak**
+
+* [e73587a10b91567](https://github.com/spgennard/vscode_cobol/commit/e73587a10b91567) *2021-06-15 23:40:23*
+
+**remove non-existant ref to language**
+
+* [ad077c1bd26c67d](https://github.com/spgennard/vscode_cobol/commit/ad077c1bd26c67d) *2021-06-15 20:15:16*
+
+**cleanup forgotten unused files**
+
+* [8d5f325aca07442](https://github.com/spgennard/vscode_cobol/commit/8d5f325aca07442) *2021-06-15 19:51:24*
+
+**upd lock**
+
+* [5141f5251d1605a](https://github.com/spgennard/vscode_cobol/commit/5141f5251d1605a) *2021-06-13 21:13:58*
+
+**Update CHANGELOG.md**
+
+* [fe0bc3a9aac91e8](https://github.com/spgennard/vscode_cobol/commit/fe0bc3a9aac91e8) *2021-06-13 21:12:03*
+
+
+## 7.6.12
+
+**update related to limited functionality mode**
+
+* [63bf6bdd7bf19f7](https://github.com/spgennard/vscode_cobol/commit/63bf6bdd7bf19f7) *2021-06-13 21:11:26*
+
+**upd lock**
+
+* [babde13ddc6de88](https://github.com/spgennard/vscode_cobol/commit/babde13ddc6de88) *2021-06-11 23:01:24*
+
+**Update CHANGELOG.md**
+
+* [40eac938e1a14d7](https://github.com/spgennard/vscode_cobol/commit/40eac938e1a14d7) *2021-06-11 23:00:20*
+
+
+## 7.6.11
+
+**add some untrusted editing support**
+
+* [ce105fde4f1bc02](https://github.com/spgennard/vscode_cobol/commit/ce105fde4f1bc02) *2021-06-11 22:59:03*
+
+**update**
+
+* [1559a31549448a0](https://github.com/spgennard/vscode_cobol/commit/1559a31549448a0) *2021-06-10 20:06:22*
+
+**Update CHANGELOG.md**
+
+* [8004e1ffb10fb23](https://github.com/spgennard/vscode_cobol/commit/8004e1ffb10fb23) *2021-06-10 20:05:17*
+
+
+## 7.6.10
+
+**update README**
+
+ * remove unused property
+* [4907965934fbc5f](https://github.com/spgennard/vscode_cobol/commit/4907965934fbc5f) *2021-06-10 20:03:25*
+
+**Update CHANGELOG.md**
+
+* [73bdffdbc9b82c0](https://github.com/spgennard/vscode_cobol/commit/73bdffdbc9b82c0) *2021-06-09 20:09:41*
+
+
+## 7.6.9
+
+**use cmd for dep'ed command**
+
+* [49571beef2dbdd3](https://github.com/spgennard/vscode_cobol/commit/49571beef2dbdd3) *2021-06-09 20:06:18*
+
+**Update CHANGELOG.md**
+
+* [994544ac0ffed04](https://github.com/spgennard/vscode_cobol/commit/994544ac0ffed04) *2021-06-09 19:38:46*
+
+
+## 7.6.8
+### GitHub [#286](https://github.com/spgennard/vscode_cobol/issues/286) Extension Host error with &#x60;bitlang.cobol&#x60; after upgrade to 7.6  
+
+**change process_metadata_cache_on_start to be executed via a private command and change comparision Fix #286**
+
+* [dac47cdd7f1122e](https://github.com/spgennard/vscode_cobol/commit/dac47cdd7f1122e) *2021-06-09 18:45:34*
+
+
+
+**update**
+
+* [73d1e56708e7f15](https://github.com/spgennard/vscode_cobol/commit/73d1e56708e7f15) *2021-06-09 19:38:15*
+
+**move getSourceFormat into a seperate file and add langid to doc, so it**
+
+ * can be used with out of process scanner
+* [e4506ee9a029bd7](https://github.com/spgennard/vscode_cobol/commit/e4506ee9a029bd7) *2021-06-09 19:29:54*
+
+**unify coboleditor.margin & coboleditor.fileformat_strategy**
+
+* [b44411db04ce91a](https://github.com/spgennard/vscode_cobol/commit/b44411db04ce91a) *2021-06-09 16:56:19*
+
+**some lint based tweaks**
+
+* [92bb604bede4dd8](https://github.com/spgennard/vscode_cobol/commit/92bb604bede4dd8) *2021-06-08 21:56:49*
+
+**refactor a little more**
+
+* [c45593c8695c4c2](https://github.com/spgennard/vscode_cobol/commit/c45593c8695c4c2) *2021-06-08 20:42:24*
+
+**continue refactoring**
+
+* [7b2baad469f202a](https://github.com/spgennard/vscode_cobol/commit/7b2baad469f202a) *2021-06-08 20:34:43*
+
+**update**
+
+* [26082286725310b](https://github.com/spgennard/vscode_cobol/commit/26082286725310b) *2021-06-07 23:18:55*
+
+**Update CHANGELOG.md**
+
+* [0e40e3c1aac4750](https://github.com/spgennard/vscode_cobol/commit/0e40e3c1aac4750) *2021-06-07 23:17:59*
+
+
+## 7.6.7
+
+**use alternative update mechanism that caused update events**
+
+* [fdd8df9e0d5bff7](https://github.com/spgennard/vscode_cobol/commit/fdd8df9e0d5bff7) *2021-06-07 23:16:16*
+
+**next method.. to vslogger**
+
+* [207431e0f00f356](https://github.com/spgennard/vscode_cobol/commit/207431e0f00f356) *2021-06-07 23:05:23*
+
+**move stuff to VSLogger**
+
+* [702b1aa9c1dd070](https://github.com/spgennard/vscode_cobol/commit/702b1aa9c1dd070) *2021-06-07 22:58:46*
+
+**move one more function into the vslogger**
+
+* [cb778ef24559d3a](https://github.com/spgennard/vscode_cobol/commit/cb778ef24559d3a) *2021-06-07 22:51:49*
+
+**continue refactoring**
+
+* [0d325689ac72c2e](https://github.com/spgennard/vscode_cobol/commit/0d325689ac72c2e) *2021-06-07 22:40:33*
+
+**move performance_now**
+
+* [b41d0418432c981](https://github.com/spgennard/vscode_cobol/commit/b41d0418432c981) *2021-06-07 22:33:11*
+
+**move isDirectory**
+
+* [bec159e3f0fe91a](https://github.com/spgennard/vscode_cobol/commit/bec159e3f0fe91a) *2021-06-07 22:20:35*
+
+**continue refactoring**
+
+* [8ed4bfcde9999a3](https://github.com/spgennard/vscode_cobol/commit/8ed4bfcde9999a3) *2021-06-07 21:46:29*
+
+**merge function**
+
+* [b8fbfcf7d6625d5](https://github.com/spgennard/vscode_cobol/commit/b8fbfcf7d6625d5) *2021-06-07 21:37:56*
+
+**update due to typescript changes**
+
+* [e49b2526d478827](https://github.com/spgennard/vscode_cobol/commit/e49b2526d478827) *2021-06-07 20:14:40*
+
+**Update CHANGELOG.md**
+
+* [925834edb75ca0a](https://github.com/spgennard/vscode_cobol/commit/925834edb75ca0a) *2021-06-07 19:42:04*
+
+
+## 7.6.6
+### GitHub [#285](https://github.com/spgennard/vscode_cobol/issues/285) Margin setting not respected  
+
+**Margin setting not respected Fix #285**
+
+ * - blank lines caused fixed file format detection to break
+ * - lines &gt; 80 should case fixed file format detection to be considerred
+ * - allow coboleditor.margin to overide file format
+* [b3d6c4dffc958d2](https://github.com/spgennard/vscode_cobol/commit/b3d6c4dffc958d2) *2021-06-07 19:37:56*
+
+
+
+**Update CHANGELOG.md**
+
+* [ba0d806d897597e](https://github.com/spgennard/vscode_cobol/commit/ba0d806d897597e) *2021-06-06 20:34:42*
+
+
+## 7.6.5
+
+**add more abbr to snippets**
+
+ * add more information to the extension checks
+* [1c71f159af79e4b](https://github.com/spgennard/vscode_cobol/commit/1c71f159af79e4b) *2021-06-06 20:32:32*
+
+**add quotes**
+
+* [28287b1bf3f5b52](https://github.com/spgennard/vscode_cobol/commit/28287b1bf3f5b52) *2021-05-31 22:08:26*
+
+**update**
+
+* [0c93e2db83414dd](https://github.com/spgennard/vscode_cobol/commit/0c93e2db83414dd) *2021-05-31 22:04:01*
+
+**Update CHANGELOG.md**
+
+* [4b80c19597f15d2](https://github.com/spgennard/vscode_cobol/commit/4b80c19597f15d2) *2021-05-31 21:48:05*
+
+
+## 7.5.31
+
+**update**
+
+* [44f6d7525f85ef9](https://github.com/spgennard/vscode_cobol/commit/44f6d7525f85ef9) *2021-05-31 21:45:54*
+
+**Update CHANGELOG.md**
+
+* [05b5290e7298980](https://github.com/spgennard/vscode_cobol/commit/05b5290e7298980) *2021-05-31 21:36:00*
+
+**continue the seperation of the depreciated caching support**
+
+* [777185353c3ac6e](https://github.com/spgennard/vscode_cobol/commit/777185353c3ac6e) *2021-05-31 21:34:38*
+
+**continue refactor file handing**
+
+* [a7d5b1c22ca5723](https://github.com/spgennard/vscode_cobol/commit/a7d5b1c22ca5723) *2021-05-31 16:01:10*
+
+**continue refactoring the file apis, into vs based ones & non-vs**
+
+* [e1863e295305bed](https://github.com/spgennard/vscode_cobol/commit/e1863e295305bed) *2021-05-31 11:57:01*
+
+**update**
+
+* [26bed67a6be34b3](https://github.com/spgennard/vscode_cobol/commit/26bed67a6be34b3) *2021-05-31 09:47:02*
+
+**Update CHANGELOG.md**
+
+* [d642ca7b1fbff60](https://github.com/spgennard/vscode_cobol/commit/d642ca7b1fbff60) *2021-05-30 22:56:54*
+
+
+## 7.5.30
+
+**only show threading option on large workspaes**
+
+* [8535c4105723bcf](https://github.com/spgennard/vscode_cobol/commit/8535c4105723bcf) *2021-05-30 22:56:05*
+
+**remove check for ..x perms, as if used needs to be done everywhere...**
+
+* [7aa4c3842f706fc](https://github.com/spgennard/vscode_cobol/commit/7aa4c3842f706fc) *2021-05-30 22:38:34*
+
+**add option to enable recursive search but disable by default**
+
+* [3ff06e3203130da](https://github.com/spgennard/vscode_cobol/commit/3ff06e3203130da) *2021-05-30 16:47:40*
+
+**continue refactoring cobscanner/vscobscanner**
+
+ * - move file scanner to own mechanism
+ * - use workspace findFile approach for scanner
+ * - drop unused list of directories
+* [d759640d6f120cf](https://github.com/spgennard/vscode_cobol/commit/d759640d6f120cf) *2021-05-30 15:26:16*
+
+**continue to refactor the vscobscanner**
+
+* [4f53522ab7aa3e5](https://github.com/spgennard/vscode_cobol/commit/4f53522ab7aa3e5) *2021-05-30 14:35:03*
+
+**start to move vscobscanner code to seperate class, so the non-dep can be**
+
+ * moved forward without the restrictions imposed by the old dep&#x27;ed code
+* [68874ba19179f89](https://github.com/spgennard/vscode_cobol/commit/68874ba19179f89) *2021-05-30 11:28:51*
+
+**continue work cobscanner**
+
+* [415795e8125be34](https://github.com/spgennard/vscode_cobol/commit/415795e8125be34) *2021-05-30 00:09:38*
+
+**continue work on cobscanner**
+
+* [1cdfab0fe897aaa](https://github.com/spgennard/vscode_cobol/commit/1cdfab0fe897aaa) *2021-05-29 02:06:10*
+
+**continue work on cobscanner**
+
+ * - fix bug with not updating a timestamp
+* [d7e44f97e9ce576](https://github.com/spgennard/vscode_cobol/commit/d7e44f97e9ce576) *2021-05-29 01:16:17*
+
+**commit performance changes for cobscanner**
+
+* [9fee4680593cd87](https://github.com/spgennard/vscode_cobol/commit/9fee4680593cd87) *2021-05-28 08:28:03*
+
+**unlink not required in !depmode**
+
+* [b52db85e64cb54a](https://github.com/spgennard/vscode_cobol/commit/b52db85e64cb54a) *2021-05-23 23:12:38*
+
+**continue to work on scanner**
+
+ * - useenv mode setup
+* [815f11affc0f764](https://github.com/spgennard/vscode_cobol/commit/815f11affc0f764) *2021-05-23 23:10:42*
+
+**Update CHANGELOG.md**
+
+* [733f507fd721e61](https://github.com/spgennard/vscode_cobol/commit/733f507fd721e61) *2021-05-23 21:14:10*
+
+
+## 7.5.23
+
+**Update CHANGELOG.md**
+
+* [d0458d92d0de79b](https://github.com/spgennard/vscode_cobol/commit/d0458d92d0de79b) *2021-05-22 21:22:37*
+
+
+## 7.5.22
+
+**prep**
+
+* [aec25640a9bdfe1](https://github.com/spgennard/vscode_cobol/commit/aec25640a9bdfe1) *2021-05-22 21:22:08*
+
+**fix a 'replace' problem**
+
+ * start to refactor cobscanner
+* [c8feba4a5ad53a9](https://github.com/spgennard/vscode_cobol/commit/c8feba4a5ad53a9) *2021-05-22 20:10:30*
+
+**update ref**
+
+* [7647f5d5715cd61](https://github.com/spgennard/vscode_cobol/commit/7647f5d5715cd61) *2021-05-22 16:49:39*
+
+**start to make it obvious which bits of code are dep'ed**
+
+* [00ab8a747bae801](https://github.com/spgennard/vscode_cobol/commit/00ab8a747bae801) *2021-05-22 16:47:57*
+
+**try to fix user's broken config**
+
+* [a26ebb3f674ac38](https://github.com/spgennard/vscode_cobol/commit/a26ebb3f674ac38) *2021-05-22 16:28:19*
+
+**expand callable synbols to include the line number**
+
+* [c8de26ba95b6f62](https://github.com/spgennard/vscode_cobol/commit/c8de26ba95b6f62) *2021-05-22 11:26:10*
+
+**update**
+
+* [19819d21fe5a5dd](https://github.com/spgennard/vscode_cobol/commit/19819d21fe5a5dd) *2021-05-21 23:29:40*
+
+**Update CHANGELOG.md**
+
+* [54c7551a71c9e9d](https://github.com/spgennard/vscode_cobol/commit/54c7551a71c9e9d) *2021-05-21 23:28:17*
+
+**reduce the amount of items cached to the workspace at the expense of**
+
+ * resolving them via the workspace
+* [baa522f2e186a3a](https://github.com/spgennard/vscode_cobol/commit/baa522f2e186a3a) *2021-05-21 23:23:57*
+
+**Update stale.yml**
+
+* [6b1bca15d1a4258](https://github.com/spgennard/vscode_cobol/commit/6b1bca15d1a4258) *2021-05-21 15:04:38*
+
+**update**
+
+* [50b3caa39ae226d](https://github.com/spgennard/vscode_cobol/commit/50b3caa39ae226d) *2021-05-20 21:37:56*
+
+**Update CHANGELOG.md**
+
+* [6a415b7edc40ca2](https://github.com/spgennard/vscode_cobol/commit/6a415b7edc40ca2) *2021-05-20 21:34:18*
+
+
+## 7.5.20
+
+**avoid bad entry in cache**
+
+ * empty cache if depreciated setting is used
+* [f675bc032ee9b10](https://github.com/spgennard/vscode_cobol/commit/f675bc032ee9b10) *2021-05-20 21:32:16*
+
+**Update publishit.sh**
+
+* [c114271d864fe08](https://github.com/spgennard/vscode_cobol/commit/c114271d864fe08) *2021-05-20 10:41:37*
+
+**use a inactivity based timer rather than a length of time timer**
+
+ * - inactivity is a lack of any message from the scanner
+* [7c21aa63b18a19b](https://github.com/spgennard/vscode_cobol/commit/7c21aa63b18a19b) *2021-05-19 22:23:28*
+
+**Update CHANGELOG.md**
+
+* [33511bcdb5f9cf9](https://github.com/spgennard/vscode_cobol/commit/33511bcdb5f9cf9) *2021-05-19 21:25:11*
+
+
+## 7.5.19
+### GitHub [#282](https://github.com/spgennard/vscode_cobol/issues/282) VSCode become unresponsible after run processAllFilesInWorkspace command in a huge worskspace  
+
+**VSCode become unresponsible after run processAllFilesInWorkspace command in a huge worskspace Fix #282**
+
+ * - Wire up cache_metadata_time_limit, so processAllFilesInWorkspace can
+ * be cancelled early
+ * - Change the process indicator to be finer
+* [ee9384fe6fb7a88](https://github.com/spgennard/vscode_cobol/commit/ee9384fe6fb7a88) *2021-05-19 21:22:48*
+
+
+
+**update**
+
+* [1c6f4e1437402c9](https://github.com/spgennard/vscode_cobol/commit/1c6f4e1437402c9) *2021-05-18 19:20:10*
+
+**Update CHANGELOG.md**
+
+* [98ae406474e5022](https://github.com/spgennard/vscode_cobol/commit/98ae406474e5022) *2021-05-18 19:18:38*
+
+
+## 7.5.18
+
+**remove npe**
+
+* [042414bf3d6b16b](https://github.com/spgennard/vscode_cobol/commit/042414bf3d6b16b) *2021-05-18 16:10:47*
+
+**update**
+
+* [c40d37715c5888d](https://github.com/spgennard/vscode_cobol/commit/c40d37715c5888d) *2021-05-18 16:05:14*
+
+**Update CHANGELOG.md**
+
+* [fbe16e28baf1ac0](https://github.com/spgennard/vscode_cobol/commit/fbe16e28baf1ac0) *2021-05-18 16:02:47*
+
+
+## 7.5.17
+
+**Update CHANGELOG.md**
+
+* [99fcf59f3c624bd](https://github.com/spgennard/vscode_cobol/commit/99fcf59f3c624bd) *2021-05-18 15:59:42*
+
+**don't change unless it a COBOL doc (ie: pp output)**
+
+* [bd39204aefea630](https://github.com/spgennard/vscode_cobol/commit/bd39204aefea630) *2021-05-18 13:51:47*
+
+**flip to COBOL for temp doc**
+
+* [ad90ab7d981cb76](https://github.com/spgennard/vscode_cobol/commit/ad90ab7d981cb76) *2021-05-18 13:48:30*
+
+**tidy up**
+
+* [bc016e26bf4f4f4](https://github.com/spgennard/vscode_cobol/commit/bc016e26bf4f4f4) *2021-05-18 10:47:30*
+
+**use range**
+
+* [1fa50e3d2777d7d](https://github.com/spgennard/vscode_cobol/commit/1fa50e3d2777d7d) *2021-05-17 23:22:12*
+
+**continue work on copybook handling**
+
+* [74dbe6edbfc06a9](https://github.com/spgennard/vscode_cobol/commit/74dbe6edbfc06a9) *2021-05-17 21:48:13*
+
+**only have word sub for the moment**
+
+* [1395bc5921cac06](https://github.com/spgennard/vscode_cobol/commit/1395bc5921cac06) *2021-05-16 23:39:43*
+
+**add a codelens for 'copy replacing' results**
+
+* [ea376a8d2151a0e](https://github.com/spgennard/vscode_cobol/commit/ea376a8d2151a0e) *2021-05-16 20:48:42*
+
+**start to wire in existing token'ed copy statement**
+
+ * - fix start to be before &#x27;copy&#x27; verb
+* [f0f864ab69411f7](https://github.com/spgennard/vscode_cobol/commit/f0f864ab69411f7) *2021-05-16 15:11:15*
+
+**rename replace boolean, to allow it to include replace/replacing**
+
+* [cb23430ae6b0cbb](https://github.com/spgennard/vscode_cobol/commit/cb23430ae6b0cbb) *2021-05-15 22:40:34*
+
+**add range for copy statement**
+
+* [592ea5e9d397f92](https://github.com/spgennard/vscode_cobol/commit/592ea5e9d397f92) *2021-05-15 20:40:05*
+
+**make replace/replacing work better**
+
+* [55dd15f1b39905f](https://github.com/spgennard/vscode_cobol/commit/55dd15f1b39905f) *2021-05-15 20:08:18*
+
+**add lowercase cobol alias for the snippets**
+
+* [075d24f21c6c8a1](https://github.com/spgennard/vscode_cobol/commit/075d24f21c6c8a1) *2021-05-14 07:45:23*
+
+**move version forward**
+
+* [2f747eb130676c5](https://github.com/spgennard/vscode_cobol/commit/2f747eb130676c5) *2021-05-13 22:12:11*
+
+**tweak**
+
+* [5dff120a67396e0](https://github.com/spgennard/vscode_cobol/commit/5dff120a67396e0) *2021-05-11 21:27:35*
+
+**avoid security issue**
+
+* [1f682ebe9c93738](https://github.com/spgennard/vscode_cobol/commit/1f682ebe9c93738) *2021-05-11 20:52:15*
+
+**update**
+
+* [82922fcd6d0816c](https://github.com/spgennard/vscode_cobol/commit/82922fcd6d0816c) *2021-05-11 20:48:01*
+
+**continue work copybook handling**
+
+* [632ccd0601d4c6f](https://github.com/spgennard/vscode_cobol/commit/632ccd0601d4c6f) *2021-05-09 21:13:52*
+
+**fix navigation of "copy of.." but this mechanism might be short-lived..**
+
+* [ee4fc15db462396](https://github.com/spgennard/vscode_cobol/commit/ee4fc15db462396) *2021-05-09 16:06:12*
+
+**use only one style**
+
+* [6ed3cae6d10a43d](https://github.com/spgennard/vscode_cobol/commit/6ed3cae6d10a43d) *2021-05-04 20:54:12*
+
+**Update CHANGELOG.md**
+
+* [c423be5df06a1d2](https://github.com/spgennard/vscode_cobol/commit/c423be5df06a1d2) *2021-05-03 17:57:13*
+
+
 ## 7.5.2
 
 **prep**

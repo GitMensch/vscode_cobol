@@ -2,10 +2,11 @@
 
 import * as path from 'path';
 
-import { workspace } from 'vscode';
-import { ICOBOLSettings, COBOLSettings, outlineFlag, formatOnReturn } from './iconfiguration';
-import { isDirectory } from './extension';
+import { commands, workspace } from 'vscode';
+import { ICOBOLSettings, COBOLSettings, outlineFlag, formatOnReturn, IEditorMarginFiles } from './iconfiguration';
 import { CacheDirectoryStrategy } from './externalfeatures';
+import { COBOLFileUtils } from './fileutils';
+import { VSLogger } from './extension';
 
 
 export class VSCOBOLConfiguration {
@@ -14,7 +15,6 @@ export class VSCOBOLConfiguration {
     public static init(): ICOBOLSettings {
         const vsconfig = VSCOBOLConfiguration.config;
         vsconfig.enable_tabstop = getBoolean('enable_tabstop', false);
-        vsconfig.ignorecolumn_b_onwards = getBoolean('ignorecolumn_b_onwards', false);
         vsconfig.copybooks_nested = getBoolean('copybooks_nested', false);
         vsconfig.fuzzy_variable_search = getBoolean('fuzzy_variable_search', false);
         vsconfig.outline = isOutlineEnabled();
@@ -35,7 +35,7 @@ export class VSCOBOLConfiguration {
         vsconfig.intellisense_item_limit = getIntellisense_item_limit();
         vsconfig.process_metadata_cache_on_start = getBoolean("process_metadata_cache_on_start", false);
         vsconfig.cache_metadata = getcache_metadata();
-        vsconfig.cache_metadata_time_limit = getNumber("cache_metadata_time_limit", 30000);
+        vsconfig.cache_metadata_inactivity_timeout = getNumber("cache_metadata_inactivity_timeout", 5000);
         vsconfig.cache_metadata_max_directory_scan_depth = getNumber("cache_metadata_max_directory_scan_depth", 32);
         vsconfig.cache_metadata_show_progress_messages = getBoolean("cache_metadata_show_progress_messages", false);
         vsconfig.parse_copybooks_for_references = getBoolean("parse_copybooks_for_references", false);
@@ -48,11 +48,14 @@ export class VSCOBOLConfiguration {
         vsconfig.linter_ignore_missing_copybook = getBoolean("linter_ignore_missing_copybook", false);
         vsconfig.ignore_unsafe_extensions = getBoolean("ignore_unsafe_extensions", false);
         vsconfig.coboldoc_workspace_folder = getCoboldoc_workspace_folder();
-        vsconfig.scan_comments_for_hints = getBoolean("scan_comments_for_hints", false);
+
+        // scan for comments can cause a file access.. so it cannot be trusted
+        vsconfig.scan_comments_for_hints = !workspace.isTrusted ? false : getBoolean("scan_comments_for_hints", false);
+        
         vsconfig.scan_comment_copybook_token = getscan_comment_copybook_token();
         vsconfig.process_metadata_cache_on_file_save = getBoolean("process_metadata_cache_on_file_save", false);
         vsconfig.cache_metadata_user_directory = getString("cache_metadata_user_directory", "");
-        vsconfig.editor_maxTokenizationLineLength = workspace.getConfiguration('editor').get<number>("maxTokenizationLineLength",20000);
+        vsconfig.editor_maxTokenizationLineLength = workspace.getConfiguration('editor').get<number>("maxTokenizationLineLength", 20000);
 
         vsconfig.sourceview = getBoolean("sourceview", false);
         vsconfig.sourceview_include_jcl_files = getBoolean("sourceview_include_jcl_files", true);
@@ -61,19 +64,117 @@ export class VSCOBOLConfiguration {
         vsconfig.sourceview_include_doc_files = getBoolean("sourceview_include_doc_files", true);
         vsconfig.sourceview_include_script_files = getBoolean("sourceview_include_script_files", true);
         vsconfig.sourceview_include_object_files = getBoolean("sourceview_include_object_files", true);
-        vsconfig.format_on_return = workspace.getConfiguration('coboleditor').get<formatOnReturn>("format_on_return",formatOnReturn.Off);
+        vsconfig.format_on_return = workspace.getConfiguration('coboleditor').get<formatOnReturn>("format_on_return", formatOnReturn.Off);
 
         vsconfig.maintain_metadata_cache = getBoolean("maintain_metadata_cache", true);
         vsconfig.maintain_metadata_cache_single_folder = getBoolean("maintain_metadata_cache_single_folder", false);
+        vsconfig.maintain_metadata_recursive_search = getBoolean("maintain_metadata_recursive_search", false);
         vsconfig.metadata_symbols = getmetadata_symbols(vsconfig);
         vsconfig.metadata_entrypoints = getmetadata_entrypoints(vsconfig);
         vsconfig.metadata_types = getmetadata_types(vsconfig);
         vsconfig.metadata_files = getmetadata_files(vsconfig);
         vsconfig.metadata_knowncopybooks = getmetadata_knowncopybooks(vsconfig);
         vsconfig.enable_semantic_token_provider = getBoolean('enable_semantic_token_provider', false);
-        vsconfig.process_replace_verb = getBoolean('process_replace_verb', false);
+        vsconfig.enable_text_replacement = getBoolean('enable_text_replacement', false);
         vsconfig.preprocessor_extensions = getpreprocessor_extensions();
+
+        VSCOBOLConfiguration.flipDepreciatedSettings(vsconfig);
+
+        vsconfig.editor_margin_files = getFixedFilenameConfiguration();
+
+        vsconfig.enable_source_scanner = getBoolean('enable_source_scanner', true);
+
+        vsconfig.extend_micro_focus_cobol_extension = getBoolean('extend_micro_focus_cobol_extension', false);
+        vsconfig.extend_micro_focus_cobol_extension_editor = getBoolean('extend_micro_focus_cobol_extension_editor', false);
+        
+        VSCOBOLConfiguration.setupSettingsFromMicroFocusExtension(vsconfig);
+
+        if (!workspace.isTrusted) {
+            VSCOBOLConfiguration.adjustForUntructedEnv(vsconfig);
+        }
+
+        // setup dynamic contexts given settings
+        VSCOBOLConfiguration.setupDynamicContexts(vsconfig);
+
         return vsconfig;
+    }
+
+    static logCacheMetadataDone = false;
+    static logMarginDone = false;
+
+    static adjustForUntructedEnv(vsconfig: ICOBOLSettings): void {
+        vsconfig.enable_source_scanner = false;
+        vsconfig.disable_unc_copybooks_directories = true;
+        vsconfig.process_metadata_cache_on_start = false;
+        vsconfig.parse_copybooks_for_references = false;
+        vsconfig.cache_metadata = CacheDirectoryStrategy.Off;
+        vsconfig.cache_metadata_max_directory_scan_depth = 1;
+        vsconfig.cache_metadata_show_progress_messages = false;
+        vsconfig.process_metadata_cache_on_file_save = false;
+        vsconfig.cache_metadata_user_directory = "";
+        vsconfig.editor_maxTokenizationLineLength = 1;
+        vsconfig.sourceview = false;
+        vsconfig.format_on_return = formatOnReturn.Off;
+
+        vsconfig.maintain_metadata_cache = false;
+        vsconfig.maintain_metadata_cache_single_folder = false;
+        vsconfig.maintain_metadata_recursive_search = false;
+        vsconfig.metadata_symbols = [];
+        vsconfig.metadata_entrypoints = [];
+        vsconfig.metadata_types = [];
+        vsconfig.metadata_files = [];
+        vsconfig.enable_semantic_token_provider = false;
+        vsconfig.enable_text_replacement = false;
+        vsconfig.preprocessor_extensions = [];
+    }
+
+
+    static setupDynamicContexts(vsconfig: ICOBOLSettings):void {
+        commands.executeCommand('setContext', 'coboleditor.enable_lc_cobol', vsconfig.extend_micro_focus_cobol_extension);
+    }
+
+    static setupSettingsFromMicroFocusExtension(vsconfig: ICOBOLSettings):void {
+
+        const mfConfigEditor = workspace.getConfiguration('microFocusCOBOL.editor',undefined);
+        if (mfConfigEditor === undefined) {
+            return;
+        }
+
+        vsconfig.microfocus_editor_sourceformat = mfConfigEditor.get("sourceFormat", "fixed");
+
+        // ensure no metadata is used
+        if (vsconfig.extend_micro_focus_cobol_extension) {
+            vsconfig.metadata_symbols = [];
+            vsconfig.metadata_entrypoints = [];
+            vsconfig.metadata_types = [];
+            vsconfig.metadata_files = [];
+            vsconfig.enable_semantic_token_provider = false;
+            vsconfig.enable_text_replacement = false;
+        }
+    }
+
+    static flipDepreciatedSettings(vsconfig: ICOBOLSettings): void {
+
+        //TODO: remove after a reasonable period of time
+        //in-memory migration of old setting
+        const removed_margin = getBoolean("margin", false);
+        if (removed_margin) {
+            vsconfig.fileformat_strategy = "always_fixed";
+            if (!VSCOBOLConfiguration.logMarginDone) {
+                VSLogger.logMessage("WARNING: coboleditor.margin is set, ignoring and using coboleditor.fileformat_strategy=always_fixed");
+                VSCOBOLConfiguration.logMarginDone = true;
+            }
+        }
+
+        if (vsconfig.maintain_metadata_cache && vsconfig.cache_metadata !== CacheDirectoryStrategy.Off) {
+            vsconfig.maintain_metadata_cache = false;
+
+            if (!VSCOBOLConfiguration.logCacheMetadataDone) {
+                VSLogger.logMessage("WARNING: Both coboleditor.maintain_metadata_cache and the depreciated coboleditor.cache_metadata are active");
+                VSLogger.logMessage("         cache_metadata turned off, please review settings")
+                VSCOBOLConfiguration.logCacheMetadataDone = true;
+            }
+        }
     }
 
     public static get(): ICOBOLSettings {
@@ -85,7 +186,7 @@ export class VSCOBOLConfiguration {
     }
 
 
-    public static isOnDiskCachingEnabled(): boolean {
+    public static isDepreciatedDiskCachingEnabled(): boolean {
         const config = VSCOBOLConfiguration.get();
         const cacheStrat = config.cache_metadata;
         if (cacheStrat === CacheDirectoryStrategy.Off) {
@@ -94,6 +195,17 @@ export class VSCOBOLConfiguration {
 
         return true;
     }
+}
+
+
+function getFixedFilenameConfiguration(): IEditorMarginFiles[] {
+    const editorConfig = workspace.getConfiguration('coboleditor');
+    const files: IEditorMarginFiles[] | undefined = editorConfig.get<IEditorMarginFiles[]>("fileformat");
+    if (files === undefined || files === null) {
+        return [];
+    }
+
+    return files;
 }
 
 function getBoolean(configSection: string, defaultValue: boolean): boolean {
@@ -246,7 +358,9 @@ function getCopybookdirs_defaults(invalidSearchDirectory: string[]): string[] {
         /* remove ${workspaceFolder} */
         dir = expandEnvVars(dir);
 
+        // eslint-disable-next-line no-template-curly-in-string
         if (dir.startsWith("${workspaceFolder}")) {
+            // eslint-disable-next-line no-template-curly-in-string
             dir = dir.replace("${workspaceFolder}", "").trim();
 
             // remove / or \ forward
@@ -262,7 +376,7 @@ function getCopybookdirs_defaults(invalidSearchDirectory: string[]): string[] {
                 if (e !== undefined && e !== null) {
                     e.split(path.delimiter).forEach(function (item) {
                         if (item !== undefined && item !== null && item.length > 0) {
-                            if (isDirectory(item)) {
+                            if (COBOLFileUtils.isDirectory(item)) {
                                 extraDirs.push(item);
                             } else {
                                 invalidSearchDirectory.push(item);
@@ -283,8 +397,8 @@ function getCopybookdirs_defaults(invalidSearchDirectory: string[]): string[] {
     return extraDirs;
 }
 
-const DEFAULT_COPYBOOK_EXTS = ["cpy", "CPY"];
-const DEFAULT_PROGRAM_EXTS = ["cbl", "CBL"];
+const DEFAULT_COPYBOOK_EXTS = ["cpy", "scr", "CPY", "SCR", "cbl", "CBL", "ccp", "dds", "ss", "wks"];
+const DEFAULT_PROGRAM_EXTS = ["cob", "COB", "cbl", "CBL", "cobol", "scbl", "pco"];
 
 function getCopybookExts(): string[] {
     const editorConfig = workspace.getConfiguration('coboleditor');
@@ -374,7 +488,7 @@ function getmetadata_types(settings: ICOBOLSettings): string[] {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-function getmetadata_files(config:ICOBOLSettings): string[] {
+function getmetadata_files(config: ICOBOLSettings): string[] {
     if (config.maintain_metadata_cache === false) {
         return [];
     }
@@ -389,7 +503,7 @@ function getmetadata_files(config:ICOBOLSettings): string[] {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-function getmetadata_knowncopybooks(config:ICOBOLSettings): string[] {
+function getmetadata_knowncopybooks(config: ICOBOLSettings): string[] {
     if (config.maintain_metadata_cache === false) {
         return [];
     }

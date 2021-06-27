@@ -1,24 +1,22 @@
 {
   "name": "cobol",
   "displayName": "COBOL",
-  "description": "IntelliSense, highlighting, snippets and more for COBOL, JCL, PL/I & DIR and HLASM",
-  "version": "7.5.2",
+  "description": "IntelliSense, highlighting, snippets, and code browsing for COBOL and more",
+  "version": "7.6.24",
   "publisher": "bitlang",
   "keywords": [
     "cobol",
     "jcl",
     "pl/i",
     "pli",
-    "mfcobol",
-    "mvs",
     "visualcobol",
     "serverexpress",
     "ocds",
     "cobol-it",
     "cobolit",
-    "ibmcobol",
     "bms",
-    "mfu"
+    "mfu",
+    "multi-root ready"
   ],
   "repository": {
     "type": "git",
@@ -28,7 +26,7 @@
     "email": "stephen@gennard.net"
   },
   "engines": {
-    "vscode": "^1.55.0"
+    "vscode": "^1.57.0"
   },
   "extensionKind": [
     "workspace"
@@ -36,6 +34,7 @@
   "icon": "images/cobol.png",
   "categories": [
     "Programming Languages",
+    "Linters",
     "Snippets",
     "Other"
   ],
@@ -47,7 +46,6 @@
     "onLanguage:COBOL",
     "onLanguage:COBOLIT",
     "onLanguage:ACUCOBOL",
-    "onLanguage:mfcobol",
     "onLanguage:JCL",
     "onLanguage:bms",
     "onLanguage:hlasm",
@@ -61,7 +59,6 @@
     "onCommand:cobolplugin.revtab",
     "onCommand:cobolplugin.change_lang_to_acu",
     "onCommand:cobolplugin.change_lang_to_cobol",
-    "onCommand:cobolplugin.toggle_margin",
     "onCommand:cobolplugin.change_source_format",
     "onCommand:cobolplugin.deprecated.dumpMetaData",
     "onCommand:cobolplugin.deprecated.clearMetaData",
@@ -98,10 +95,70 @@
     "name": "Stephen Gennard",
     "email": "stephen@gennard.net"
   },
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": "limited",
+      "restrictedConfigurations": [
+        "coboleditor.process_metadata_cache_on_file_save",
+        "coboleditor.cache_metadata",
+        "coboleditor.cache_metadata_user_directory",
+        "coboleditor.cache_metadata_inactivity_timeout",
+        "coboleditor.cache_metadata_max_directory_scan_depth",
+        "coboleditor.cache_metadata_show_progress_messages",
+        "coboleditor.margin",
+        "coboleditor.outline",
+        "coboleditor.pre_parse_line_limit",
+        "coboleditor.linter",
+        "coboleditor.linter_mark_as_information",
+        "coboleditor.linter_unused_paragraphs_or_sections",
+        "coboleditor.sourceview",
+        "coboleditor.sourceview_include_jcl_files",
+        "coboleditor.sourceview_include_hlasm_files",
+        "coboleditor.sourceview_include_pli_files",
+        "coboleditor.sourceview_include_doc_files",
+        "coboleditor.sourceview_include_script_files",
+        "coboleditor.sourceview_include_object_files",
+        "coboleditor.mfunit.diagnostic.color",
+        "coboleditor.disable_unc_copybooks_directories",
+        "coboleditor.intellisense_include_unchanged",
+        "coboleditor.intellisense_include_camelcase",
+        "coboleditor.intellisense_include_uppercase",
+        "coboleditor.intellisense_include_lowercase",
+        "coboleditor.intellisense_item_limit",
+        "coboleditor.process_metadata_cache_on_start",
+        "coboleditor.parse_copybooks_for_references",
+        "coboleditor.workspacefolders_order",
+        "coboleditor.linter_house_standards",
+        "coboleditor.linter_ignore_section_before_entry",
+        "coboleditor.linter_house_standards_rules",
+        "coboleditor.linter_ignore_missing_copybook",
+        "coboleditor.ignore_unsafe_extensions",
+        "coboleditor.scan_comments_for_hints",
+        "coboleditor.scan_comment_copybook_token",
+        "coboleditor.fileformat_strategy",
+        "coboleditor.fileformat",
+        "coboleditor.format_on_return",
+        "coboleditor.metadata_symbols",
+        "coboleditor.metadata_entrypoints",
+        "coboleditor.metadata_types",
+        "coboleditor.metadata_files",
+        "coboleditor.metadata_knowncopybooks",
+        "coboleditor.maintain_metadata_cache",
+        "coboleditor.maintain_metadata_recursive_search",
+        "coboleditor.maintain_metadata_cache_single_folder",
+        "coboleditor.enable_semantic_token_provider",
+        "coboleditor.preprocessor_extensions",
+        "coboleditor.enable_text_replacement",
+        "coboleditor.enable_source_scanner",
+        "coboleditor.enable_data_provider",
+        "jcleditor.margin"
+      ]
+    }
+  },
   "contributes": {
     "configuration": {
       "type": "object",
-      "title": "COBOL configuration",
+      "title": "COBOL",
       "properties": {
         "coboleditor.tabstops": {
           "type": "array",
@@ -180,6 +237,8 @@
             }
           },
           "default": [
+            "cob",
+            "COB",
             "cbl",
             "CBL",
             "cobol",
@@ -208,27 +267,21 @@
         },
         "coboleditor.process_metadata_cache_on_file_save": {
           "type": "boolean",
-          "title": "When enabled, process metadata on file save",
+          "description": "When enabled, process metadata on file save",
           "default": false,
           "deprecationMessage": "This setting is depreciated and may be removed in future releases"
-        },
-        "coboleditor.ignorecolumn_b_onwards": {
-          "deprecationMessage": "This setting is depreciated and may be removed in future releases",
-          "type": "boolean",
-          "title": "include column 72 onwards in parsing",
-          "default": true
         },
         "coboleditor.copybooks_nested": {
           "deprecationMessage": "This setting is depreciated and may be removed in future releases",
           "type": "boolean",
           "markdownDescription": "nest copybooks in outline view (restart required)",
-          "title": "nest copybooks in outline view (restart require)",
+          "description": "nest copybooks in outline view (restart require)",
           "default": false
         },
         "coboleditor.fuzzy_variable_search": {
           "type": "boolean",
           "markdownDescription": "fuzzy variable search (legacy compatibility)",
-          "title": "fuzzy variable search",
+          "description": "fuzzy variable search",
           "deprecationMessage": "This setting is depreciated and may be removed in future releases",
           "default": false
         },
@@ -255,15 +308,14 @@
           "title": "User specific directory for the workspace metadata cache (directory has to exist)",
           "default": ""
         },
-        "coboleditor.cache_metadata_time_limit": {
-          "deprecationMessage": "This setting is depreciated and may be removed in future releases",
+        "coboleditor.cache_metadata_inactivity_timeout": {
           "type": "number",
-          "markdownDescription": "Limited the time to process the cache (on startup) in ms",
-          "title": "Limited the time to process the cache (on startup)",
-          "default": 30000
+          "markdownDescription": "Inactivity timeout for metadata cache in ms",
+          "title": "Inactivity timeout for metadata cache in ms",
+          "default": 5000
         },
         "coboleditor.cache_metadata_max_directory_scan_depth": {
-          "deprecationMessage": "This setting is depreciated and may be removed in future releases",
+          "markdownDeprecationMessage": "This setting is depreciated and may be removed in future releases. Please use `#coboleditor.maintain_metadata_cache#`",
           "type": "number",
           "markdownDescription": "Limited the depth of the metadata cache directory scan",
           "title": "Limited the depth of the metadata cache directory scan",
@@ -272,12 +324,12 @@
         "coboleditor.cache_metadata_show_progress_messages": {
           "deprecationMessage": "This setting is depreciated and may be removed in future releases",
           "type": "boolean",
-          "markdownDescription": "Show log message during meta data processing",
+          "description": "Show log message during meta data processing",
           "default": false
         },
         "coboleditor.margin": {
           "type": "boolean",
-          "title": "When enabled, apply margin shading",
+          "markdownDeprecationMessage": "This setting is depreciated and may be removed in future releases. Please use `#coboleditor.fileformat_strategy#` and set it to *always_fixed*.",
           "default": false
         },
         "coboleditor.enable_data_provider": {
@@ -288,7 +340,8 @@
         },
         "jcleditor.margin": {
           "type": "boolean",
-          "title": "When enabled, apply margin shading",
+          "description": "When enabled, always apply margin shading for JCL source code",
+          "markdownDescription": "When enabled, *always* apply margin shading for JCL source code",
           "default": true
         },
         "coboleditor.fileformat_strategy": {
@@ -343,12 +396,12 @@
         },
         "coboleditor.enable_tabstop": {
           "type": "boolean",
-          "title": "When enabled, activate COBOL tab/detab key",
+          "description": "When enabled, activate COBOL tab/detab key",
           "default": true
         },
         "coboleditor.comment_line": {
           "type": "boolean",
-          "title": "When enabled, activate COBOL comment key",
+          "description": "When enabled, activate COBOL comment key",
           "default": true
         },
         "coboleditor.outline": {
@@ -379,61 +432,51 @@
         },
         "coboleditor.linter": {
           "type": "boolean",
-          "title": "Enable basic linting",
           "description": "When enabled, activate basic linting (limited to sections/paragraph use)",
           "default": false
         },
         "coboleditor.linter_mark_as_information": {
           "type": "boolean",
-          "title": "Mark all linter problems as information",
           "description": "When enabled, mark all linter problems as information (false is hint)",
           "default": true
         },
         "coboleditor.linter_unused_paragraphs_or_sections": {
           "type": "boolean",
-          "title": "Enable basic linting",
           "description": "When enabled, activate basic linting (limited to sections/paragraph use)",
           "default": true
         },
         "coboleditor.sourceview": {
           "type": "boolean",
-          "title": "Enable experimental explorer source view",
           "description": "Enable experimental explorer source view",
           "default": false
         },
         "coboleditor.sourceview_include_jcl_files": {
           "type": "boolean",
-          "title": "Include JCL Files in source view",
           "description": "Include JCL Files in source view",
           "default": true
         },
         "coboleditor.sourceview_include_hlasm_files": {
           "type": "boolean",
-          "title": "Include HLASM Files in source view",
           "description": "Include HLASM Files in source view",
           "default": true
         },
         "coboleditor.sourceview_include_pli_files": {
           "type": "boolean",
-          "title": "Include PL/I Files in source view",
           "description": "Include PL/I Files in source view",
           "default": true
         },
         "coboleditor.sourceview_include_doc_files": {
           "type": "boolean",
-          "title": "Include Documentation Files in source view",
           "description": "Include Documentation Files in source view",
           "default": true
         },
         "coboleditor.sourceview_include_script_files": {
           "type": "boolean",
-          "title": "Include Script Files in source view",
           "description": "Include Script Files in source view",
           "default": true
         },
         "coboleditor.sourceview_include_object_files": {
           "type": "boolean",
-          "title": "Include Object Files in source view",
           "description": "Include Object Files in source view",
           "default": true
         },
@@ -445,37 +488,31 @@
         },
         "coboleditor.mfunit.diagnostic.color": {
           "type": "boolean",
-          "title": "Enable ANSI color",
           "description": "Enable ANSI color when using the Micro Focus Unit Testing Framework (mfunit) in terminal",
           "default": true
         },
         "coboleditor.disable_unc_copybooks_directories": {
           "type": "boolean",
-          "title": "Disable UNC Copybooks",
           "description": "Disable UNC Copybooks (default false)",
           "default": false
         },
         "coboleditor.intellisense_include_unchanged": {
           "type": "boolean",
-          "title": "Include result unchanged in intellisense results",
           "description": "Include result unchanged in intellisense results (default true)",
           "default": true
         },
         "coboleditor.intellisense_include_camelcase": {
           "type": "boolean",
-          "title": "Include camelcase in intellisense results",
           "description": "Include camelcase in intellisense results (default false)",
           "default": false
         },
         "coboleditor.intellisense_include_uppercase": {
           "type": "boolean",
-          "title": "Include uppercase results in intellisense results",
           "description": "Include uppercase results in intellisense results (default false)",
           "default": false
         },
         "coboleditor.intellisense_include_lowercase": {
           "type": "boolean",
-          "title": "Include lowercase results in intellisense results",
           "description": "Include lowercase results in intellisense results (default false)",
           "default": false
         },
@@ -488,13 +525,11 @@
         },
         "coboleditor.process_metadata_cache_on_start": {
           "type": "boolean",
-          "title": "Process metadata cache on startup",
           "description": "Process metadata cache on extension load (default false)",
           "default": false
         },
         "coboleditor.parse_copybooks_for_references": {
           "type": "boolean",
-          "title": "Parse copybook for reference",
           "description": "Parse copybook for reference (default false)",
           "default": false
         },
@@ -515,13 +550,11 @@
         },
         "coboleditor.linter_house_standards": {
           "type": "boolean",
-          "title": "Enable house standards rules",
           "description": "Enable house standards rules",
           "default": false
         },
         "coboleditor.linter_ignore_section_before_entry": {
           "type": "boolean",
-          "title": "Do not warn on unused section before entry-point",
           "description": "Do not issue a warning if a unused section occurs before a entry-point, as this is often used to stop code trickling through to the next statements.",
           "default": true
         },
@@ -606,7 +639,8 @@
                 "type": "string",
                 "description": "internal metadata entypoints"
               }
-            }
+            },
+            "readOnly": true
           },
           "default": [],
           "uniqueItems": true
@@ -658,17 +692,22 @@
         },
         "coboleditor.maintain_metadata_cache": {
           "type": "boolean",
-          "title": "Maintain Metadata Cache",
+          "description": "Maintain Metadata Cache",
           "default": true
+        },
+        "coboleditor.maintain_metadata_recursive_search": {
+          "type": "boolean",
+          "description": "When 'Maintain Metadata Cache' is enabled, recursive search for source code",
+          "default": false
         },
         "coboleditor.maintain_metadata_cache_single_folder": {
           "type": "boolean",
-          "title": "When enabled, maintain metadata cache when using single folder is active",
+          "description": "When 'Maintain Metadata Cache' is enabled, cache metadata using single folder",
           "default": false
         },
         "coboleditor.enable_semantic_token_provider": {
           "type": "boolean",
-          "title": "When enabled, turn on the experimental semantic token provider",
+          "description": "When enabled, turn on the experimental semantic token provider",
           "default": false
         },
         "coboleditor.preprocessor_extensions": {
@@ -686,10 +725,24 @@
           "default": [],
           "uniqueItems": true
         },
-        "coboleditor.process_replace_verb": {
+        "coboleditor.enable_text_replacement": {
           "type": "boolean",
-          "title": "Process 'replace' verb",
-          "description": "Process 'replace' verb (default false)",
+          "description": "Process 'replace' and 'replacing' verb (default false)",
+          "default": false
+        },
+        "coboleditor.enable_source_scanner": {
+          "type": "boolean",
+          "description": "Scan source code (default true)",
+          "default": true
+        },
+        "coboleditor.extend_micro_focus_cobol_extension": {
+          "type": "boolean",
+          "description": "Extend the Micro Focus COBOL Extension with functionality from this extension.",
+          "default": false
+        },
+        "coboleditor.extend_micro_focus_cobol_extension_editor": {
+          "type": "boolean",
+          "description": "Use 'Micro Focus' extension for editing files",
           "default": false
         }
       }
@@ -1099,144 +1152,154 @@
         "title": "Select ACUCOBOL-GT language"
       },
       {
-        "command": "cobolplugin.toggle_margin",
-        "category": "COBOL",
-        "title": "Toggle margin"
-      },
-      {
-        "command": "cobolplugin.checkworkspaceformissingcopybookdirs",
-        "category": "COBOL",
-        "title": "Check workspace folders recursively for potential copybook directories",
-        "enablement": "!isWeb"
-      },
-      {
         "command": "cobolplugin.deprecated.processAllFilesInWorkspace",
         "category": "COBOL",
-        "title": "Process files in workspace for metadata",
-        "enablement": "!isWeb && config.coboleditor.cache_metadata != off"
+        "title": "Process files in workspace for metadata (deprecated)",
+        "enablement": "!isWeb && config.coboleditor.cache_metadata != off && isWorkspaceTrusted && !coboleditor.enable_lc_cobol"
       },
       {
         "command": "cobolplugin.deprecated.dumpMetaData",
         "category": "COBOL",
-        "title": "Dump metadata for diagnostic",
-        "enablement": "!isWeb  && config.coboleditor.cache_metadata != off"
+        "title": "Dump metadata for diagnostic (deprecated)",
+        "enablement": "!isWeb  && config.coboleditor.cache_metadata != off && isWorkspaceTrusted && !coboleditor.enable_lc_cobol"
       },
       {
         "command": "cobolplugin.deprecated.clearMetaData",
         "category": "COBOL",
+        "title": "Clear metadata (deprecated)",
+        "enablement": "!isWeb && config.coboleditor.maintain_metadata_cache != off && isWorkspaceTrusted && !coboleditor.enable_lc_cobol"
+      },
+      {
+        "command": "cobolplugin.clearGlobalCache",
+        "category": "COBOL",
         "title": "Clear metadata",
-        "enablement": "!isWeb && config.coboleditor.cache_metadata != off"
+        "enablement": "!isWeb && config.coboleditor.maintain_metadata_cache && isWorkspaceTrusted && !coboleditor.enable_lc_cobol"
       },
       {
         "command": "cobolplugin.processAllFilesInWorkspace",
         "category": "COBOL",
         "title": "Scan source files in workspace for metadata",
-        "enablement": "!isWeb && config.coboleditor.cache_metadata == off"
+        "enablement": "!isWeb && config.coboleditor.maintain_metadata_cache && isWorkspaceTrusted && !coboleditor.enable_lc_cobol"
       },
       {
         "command": "cobolplugin.mfurunMenu",
         "category": "COBOL",
         "title": "Run UnitTest",
-        "enablement": "!isWeb && filesExplorerFocus"
+        "enablement": "!isWeb && filesExplorerFocus && isWorkspaceTrusted"
       },
       {
         "command": "cobolplugin.runCommand",
         "category": "COBOL",
         "title": "Run Without Debugging",
-        "enablement": "!isWeb && config.coboleditor.sourceview && !editorFocus && focusedView == flat-source-view"
+        "enablement": "!isWeb && config.coboleditor.sourceview && !editorFocus && focusedView == flat-source-view && isWorkspaceTrusted"
       },
       {
         "command": "cobolplugin.runDebugCommand",
         "category": "COBOL",
         "title": "Start Debugging",
-        "enablement": "!isWeb && config.coboleditor.sourceview && !editorFocus && focusedView == flat-source-view"
+        "enablement": "!isWeb && config.coboleditor.sourceview && !editorFocus && focusedView == flat-source-view && isWorkspaceTrusted"
       },
       {
         "command": "cobolplugin.removeAllComments",
         "category": "COBOL",
-        "title": "Remove COBOL Comments"
+        "title": "Remove COBOL Comments",
+        "enablement": "isWorkspaceTrusted && !coboleditor.enable_lc_cobol"
       },
       {
         "command": "cobolplugin.removeIdentificationArea",
         "category": "COBOL",
-        "title": "Remove COBOL Identification Area"
+        "title": "Remove COBOL Identification Area",
+        "enablement": "isWorkspaceTrusted && !coboleditor.enable_lc_cobol"
       },
       {
         "command": "cobolplugin.removeColumnNumbers",
         "category": "COBOL",
-        "title": "Remove Column Numbers"
+        "title": "Remove Column Numbers",
+        "enablement": "isWorkspaceTrusted"
       },
       {
         "command": "cobolplugin.resequenceColumnNumbers",
         "category": "COBOL",
-        "title": "Re-sequence Column Numbers"
+        "title": "Re-sequence Column Numbers",
+        "enablement": "isWorkspaceTrusted"
       },
       {
         "command": "cobolplugin.makeKeywordsLowercase",
         "category": "COBOL",
-        "title": "Make keywords lowercase"
+        "title": "Make keywords lowercase",
+        "enablement": "isWorkspaceTrusted && !coboleditor.enable_lc_cobol"
       },
       {
         "command": "cobolplugin.makeKeywordsUppercase",
         "category": "COBOL",
-        "title": "Make keywords uppercase"
+        "title": "Make keywords uppercase",
+        "enablement": "isWorkspaceTrusted && !coboleditor.enable_lc_cobol"
       },
       {
         "command": "cobolplugin.makeKeywordsCamelCase",
         "category": "COBOL",
-        "title": "Make keywords camelcase"
+        "title": "Make keywords camelcase",
+        "enablement": "isWorkspaceTrusted && !coboleditor.enable_lc_cobol"
       },
       {
         "command": "cobolplugin.makeFieldsLowercase",
         "category": "COBOL",
-        "title": "Make fields lowercase"
+        "title": "Make fields lowercase",
+        "enablement": "isWorkspaceTrusted && !coboleditor.enable_lc_cobol"
       },
       {
         "command": "cobolplugin.makeFieldsUppercase",
         "category": "COBOL",
-        "title": "Make fields uppercase"
+        "title": "Make fields uppercase",
+        "enablement": "isWorkspaceTrusted && !coboleditor.enable_lc_cobol"
       },
       {
         "command": "cobolplugin.makeFieldsCamelCase",
         "category": "COBOL",
-        "title": "Make fields camelcase"
+        "title": "Make fields camelcase",
+        "enablement": "isWorkspaceTrusted && !coboleditor.enable_lc_cobol"
       },
       {
         "command": "cobolplugin.makePerformTargetsLowerCase",
         "category": "COBOL",
-        "title": "Make perform targets lowercase"
+        "title": "Make perform targets lowercase",
+        "enablement": "isWorkspaceTrusted && !coboleditor.enable_lc_cobol"
       },
       {
         "command": "cobolplugin.makePerformTargetsUpperCase",
         "category": "COBOL",
-        "title": "Make perform targets uppercase"
+        "title": "Make perform targets uppercase",
+        "enablement": "isWorkspaceTrusted && !coboleditor.enable_lc_cobol"
       },
       {
         "command": "cobolplugin.makePerformTargetsCamelCase",
         "category": "COBOL",
-        "title": "Make perform targets camelcase"
+        "title": "Make perform targets camelcase",
+        "enablement": "isWorkspaceTrusted && !coboleditor.enable_lc_cobol"
       },
       {
         "command": "cobolplugin.extractSelectionToParagraph",
         "category": "COBOL",
         "title": "Extract selection to paragraph",
-        "enablement": "editorFocus"
+        "enablement": "editorFocus && isWorkspaceTrusted && !coboleditor.enable_lc_cobol"
       },
       {
         "command": "cobolplugin.extractSelectionToSection",
         "category": "COBOL",
         "title": "Extract selection to section",
-        "enablement": "editorFocus"
+        "enablement": "editorFocus && isWorkspaceTrusted && !coboleditor.enable_lc_cobol"
       },
       {
         "command": "cobolplugin.extractSelectionToCopybook",
         "category": "COBOL",
-        "title": "Extract selection to copybook"
+        "title": "Extract selection to copybook",
+        "enablement": "isWorkspaceTrusted && !coboleditor.enable_lc_cobol"
       },
       {
         "command": "cobolplugin.migrateCopybooksToWorkspace",
         "category": "COBOL",
-        "title": "Migrate copybook settings to workspace (for performance)"
+        "title": "Migrate copybook settings to workspace (for performance)",
+        "enablement": "isWorkspaceTrusted && !coboleditor.enable_lc_cobol"
       },
       {
         "command": "cobolplugin.showCOBOLChannel",
@@ -1285,6 +1348,46 @@
           "command": "cobolplugin.extractSelectionToCopybook",
           "group": "cobolplugin",
           "when": "editorTextFocus && editorLangId == COBOL && editorHasSelection"
+        },
+        {
+          "command": "cobolplugin.move2dd",
+          "group": "cobolplugin",
+          "when": "editorTextFocus && editorLangId == cobol && !editorHasSelection && coboleditor.enable_lc_cobol"
+        },
+        {
+          "command": "cobolplugin.move2ws",
+          "group": "cobolplugin",
+          "when": "editorTextFocus && editorLangId == cobol && !editorHasSelection && coboleditor.enable_lc_cobol"
+        },
+        {
+          "command": "cobolplugin.move2pd",
+          "group": "cobolplugin",
+          "when": "editorTextFocus && editorLangId == cobol && !editorHasSelection && coboleditor.enable_lc_cobol"
+        },
+        {
+          "command": "cobolplugin.move2anyforward",
+          "group": "cobolplugin",
+          "when": "editorTextFocus && editorLangId == cobol && !editorHasSelection && coboleditor.enable_lc_cobol"
+        },
+        {
+          "command": "cobolplugin.move2anybackwards",
+          "group": "cobolplugin",
+          "when": "editorTextFocus && editorLangId == cobol && !editorHasSelection && coboleditor.enable_lc_cobol"
+        },
+        {
+          "command": "cobolplugin.extractSelectionToParagraph",
+          "group": "cobolplugin",
+          "when": "editorTextFocus && editorLangId == cobol && editorHasSelection && coboleditor.enable_lc_cobol"
+        },
+        {
+          "command": "cobolplugin.extractSelectionToSection",
+          "group": "cobolplugin",
+          "when": "editorTextFocus && editorLangId == cobol && editorHasSelection && coboleditor.enable_lc_cobol"
+        },
+        {
+          "command": "cobolplugin.extractSelectionToCopybook",
+          "group": "cobolplugin",
+          "when": "editorTextFocus && editorLangId == cobol && editorHasSelection && coboleditor.enable_lc_cobol"
         }
       ],
       "view/item/context": [
@@ -1309,7 +1412,7 @@
       {
         "key": "ctrl+k ctrl+j",
         "command": "cobolplugin.move2pd",
-        "when": "editorTextFocus && editorLangId == cobol"
+        "when": "editorTextFocus && editorLangId == cobol && coboleditor.enable_lc_cobol"
       },
       {
         "key": "ctrl+k ctrl+j",
@@ -1329,7 +1432,7 @@
       {
         "key": "ctrl+alt+p",
         "command": "cobolplugin.move2pd",
-        "when": "editorTextFocus && editorLangId == cobol"
+        "when": "editorTextFocus && editorLangId == cobol && coboleditor.enable_lc_cobol"
       },
       {
         "key": "ctrl+alt+p",
@@ -1349,7 +1452,7 @@
       {
         "key": "ctrl+alt+w",
         "command": "cobolplugin.move2ws",
-        "when": "editorTextFocus && editorLangId == cobol"
+        "when": "editorTextFocus && editorLangId == cobol && coboleditor.enable_lc_cobol"
       },
       {
         "key": "ctrl+alt+w",
@@ -1369,7 +1472,7 @@
       {
         "key": "ctrl+alt+d",
         "command": "cobolplugin.move2dd",
-        "when": "editorTextFocus && editorLangId == cobol"
+        "when": "editorTextFocus && editorLangId == cobol && coboleditor.enable_lc_cobol"
       },
       {
         "key": "ctrl+alt+d",
@@ -1389,7 +1492,7 @@
       {
         "key": "ctrl+alt+.",
         "command": "cobolplugin.move2anyforward",
-        "when": "editorTextFocus && editorLangId == cobol"
+        "when": "editorTextFocus && editorLangId == cobol && coboleditor.enable_lc_cobol"
       },
       {
         "key": "ctrl+alt+.",
@@ -1399,7 +1502,7 @@
       {
         "key": "ctrl+alt+,",
         "command": "cobolplugin.move2anybackwards",
-        "when": "editorTextFocus && editorLangId == cobol"
+        "when": "editorTextFocus && editorLangId == cobol && coboleditor.enable_lc_cobol"
       },
       {
         "key": "ctrl+alt+,",
@@ -1429,7 +1532,7 @@
       {
         "key": "tab",
         "command": "cobolplugin.tab",
-        "when": "editorLangId == cobol && !inSnippetMode"
+        "when": "editorLangId == cobol && !inSnippetMode && coboleditor.enable_lc_cobol"
       },
       {
         "key": "tab",
@@ -1439,7 +1542,7 @@
       {
         "key": "shift+tab",
         "command": "cobolplugin.revtab",
-        "when": "editorLangId == cobol && !inSnippetMode"
+        "when": "editorLangId == cobol && !inSnippetMode && coboleditor.enable_lc_cobol"
       },
       {
         "key": "shift+tab",
@@ -1469,12 +1572,17 @@
       {
         "key": "ctrl+/",
         "command": "cobolplugin.commentline",
-        "when": "editorTextFocus && editorLangId == cobol"
+        "when": "editorTextFocus && editorLangId == cobol && coboleditor.enable_lc_cobol"
       },
       {
         "key": "ctrl+/",
         "command": "cobolplugin.commentline",
         "when": "editorTextFocus && editorLangId == COBOL"
+      },
+      {
+        "key": "ctrl+/",
+        "command": "cobolplugin.commentline",
+        "when": "editorTextFocus && editorLangId == cobol && coboleditor.enable_lc_cobol"
       },
       {
         "key": "ctrl+/",
@@ -1495,32 +1603,16 @@
         "key": "alt+shift+c",
         "command": "cobolplugin.change_lang_to_cobol",
         "when": "editorLangId == ACUCOBOL && !inSnippetMode"
-      },
-      {
-        "key": "alt+shift+m",
-        "command": "cobolplugin.toggle_margin",
-        "when": "editorTextFocus && editorLangId == cobol"
-      },
-      {
-        "key": "alt+shift+m",
-        "command": "cobolplugin.toggle_margin",
-        "when": "editorTextFocus && editorLangId == COBOL"
-      },
-      {
-        "key": "alt+shift+m",
-        "command": "cobolplugin.toggle_margin",
-        "when": "editorTextFocus && editorLangId == ACUCOBOL"
-      },
-      {
-        "key": "alt+shift+m",
-        "command": "cobolplugin.toggle_margin",
-        "when": "editorTextFocus && editorLangId == COBOLIT"
       }
     ],
     "snippets": [
       {
         "language": "COBOL",
         "path": "./snippets/cobol.json"
+      },
+      {
+        "language": "COBOL",
+        "path": "./snippets/cobol-compound.json"
       },
       {
         "language": "ACUCOBOL",
@@ -1863,6 +1955,7 @@
     "vscode:prepublish": "npm run compile && webpack --mode production",
     "webpack": "npm run compile && webpack --mode development",
     "webpack-dev-not-used": "webpack --mode development --watch",
+    "just-compile": "tsc -b",
     "compile": "tsc -b && ./bld_cobscanner_and_sdk.sh",
     "test-compile": "tsc -p ./",
     "watch": "tsc -b -w",
@@ -1874,31 +1967,32 @@
     "@types/glob": "^7.1.3",
     "@types/minimatch": "^3.0.4",
     "@types/mocha": "^8.2.2",
-    "@types/node": "^15.0.1",
-    "@types/vscode": "^1.55.0",
-    "@typescript-eslint/eslint-plugin": "^4.22.0",
-    "@typescript-eslint/parser": "^4.22.0",
-    "depcheck": "^1.4.0",
-    "eslint": "^7.25.0",
-    "glob": "^7.1.6",
-    "mocha": "^8.3.2",
-    "ts-loader": "^9.1.1",
-    "typescript": "^4.2.4",
-    "vsce": "^1.88.0",
+    "@types/node": "^15.12.4",
+    "@types/vscode": "^1.57.0",
+    "@typescript-eslint/eslint-plugin": "^4.28.0",
+    "@typescript-eslint/parser": "^4.28.0",
+    "depcheck": "^1.4.1",
+    "eslint": "^7.29.0",
+    "glob": "^7.1.7",
+    "mocha": "^9.0.1",
+    "ts-loader": "^9.2.3",
+    "typescript": "^4.3.4",
+    "vsce": "^1.94.0",
     "vscode-test": "^1.5.2",
-    "webpack": "^5.36.2",
-    "webpack-cli": "^4.6.0",
-    "npe": "^1.1.3"
+    "webpack": "^5.40.0",
+    "webpack-cli": "^4.7.2",
+    "merge": "2.1.1"
   },
   "dependencies": {
     "lzjs": "1.3.0",
     "minimatch": "^3.0.4",
     "n-readlines": "^1.0.1",
     "performance-now": "2.1.0",
+    "promisify-child-process": "^4.1.1",
     "properties-reader": "^2.2.0",
-    "trie-search": "^1.3.4",
-    "typescript-string-operations": "^1.4.1",
-    "temp-dir": "^2.0.0"
+    "temp-dir": "^2.0.0",
+    "trie-search": "^1.3.5",
+    "typescript-string-operations": "^1.4.1"
   },
   "extensionDependencies": []
 }

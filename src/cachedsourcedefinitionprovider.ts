@@ -2,11 +2,11 @@ import * as vscode from 'vscode';
 import COBOLSourceScanner from './cobolsourcescanner';
 
 import VSCOBOLSourceScanner from './vscobolscanner';
-import { VSCOBOLConfiguration } from './configuration';
+import { VSCOBOLConfiguration } from './vsconfiguration';
 import { COBOLSymbol, COBOLSymbolTable } from './cobolglobalcache';
 import { COBOLCopyBookProvider } from './opencopybook';
 import { COBOLSymbolTableHelper } from './cobolglobalcache_file';
-import { logException } from './extension';
+import { VSLogger } from './extension';
 
 export class CachedCOBOLSourceDefinition implements vscode.DefinitionProvider {
     public provideDefinition(document: vscode.TextDocument,
@@ -28,7 +28,7 @@ export class CachedCOBOLSourceDefinition implements vscode.DefinitionProvider {
             return locations;
         }
 
-        const cacheDirectory = VSCOBOLSourceScanner.getCacheDirectory();
+        const cacheDirectory = VSCOBOLSourceScanner.getDeprecatedCacheDirectory();
         if (cacheDirectory === undefined) {
             return locations;
         }
@@ -50,7 +50,11 @@ export class CachedCOBOLSourceDefinition implements vscode.DefinitionProvider {
                 /* iterate through all the known copybook references */
                 for (const [key, value] of qcp.copyBooksUsed) {
                     try {
-                        const fileName = COBOLCopyBookProvider.expandLogicalCopyBookToFilenameOrEmpty(key, value.token.extraInformation, config);
+                        let fileName = value.statementInformation.fileName;
+                        if (fileName === null || fileName.length === 0) {
+                            fileName = COBOLCopyBookProvider.expandLogicalCopyBookToFilenameOrEmpty(key, value.token.extraInformation, config);
+                        }
+                        
                         if (fileName.length > 0) {
                             const symbolTable: COBOLSymbolTable | undefined = COBOLSymbolTableHelper.getSymbolTableGivenFile(cacheDirectory, fileName);
                             if (symbolTable !== undefined) {
@@ -62,7 +66,7 @@ export class CachedCOBOLSourceDefinition implements vscode.DefinitionProvider {
                         }
                     }
                     catch (fe) {
-                        logException(fe.message, fe);
+                        VSLogger.logException(fe.message, fe);
                     }
                 }
             }
@@ -88,7 +92,10 @@ export class CachedCOBOLSourceDefinition implements vscode.DefinitionProvider {
             /* iterate through all the known copybook references */
             for (const [key, value] of qcp.copyBooksUsed) {
                 try {
-                    const fileName = COBOLCopyBookProvider.expandLogicalCopyBookToFilenameOrEmpty(key, value.token.extraInformation, config);
+                    let fileName = value.statementInformation.fileName;
+                    if (fileName === null || fileName.length === 0) {
+                        fileName = COBOLCopyBookProvider.expandLogicalCopyBookToFilenameOrEmpty(key, value.token.extraInformation, config);
+                    }
                     if (fileName.length > 0) {
                         const symbolTable: COBOLSymbolTable | undefined = COBOLSymbolTableHelper.getSymbolTableGivenFile(cacheDirectory, fileName);
                         if (symbolTable !== undefined) {
@@ -100,7 +107,7 @@ export class CachedCOBOLSourceDefinition implements vscode.DefinitionProvider {
                     }
                 }
                 catch (fe) {
-                    logException(fe.message, fe);
+                    VSLogger.logException(fe.message, fe);
                 }
             }
         }

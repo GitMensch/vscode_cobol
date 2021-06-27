@@ -1,28 +1,29 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-import { COBOLStatUtils, logException, logMessage, logTimedMessage, performance_now } from "./extension";
+import { VSExtensionUtils, VSLogger } from "./extension";
 import { ESourceFormat, IExternalFeatures } from "./externalfeatures";
 import { ICOBOLSettings } from "./iconfiguration";
 import ISourceHandler from "./isourcehandler";
-import { getCOBOLSourceFormat } from "./margindecorations";
 import { COBOLCopyBookProvider } from "./opencopybook";
+import { getCOBOLSourceFormat } from "./sourceformat";
+import { VSCOBOLFileUtils } from "./vsfileutils";
 
 export class VSExternalFeatures implements IExternalFeatures{
     public logMessage(message: string): void {
-        logMessage(message);
+        VSLogger.logMessage(message);
     }
 
     public logException(message: string, ex: Error): void {
-        logException(message, ex);
+        VSLogger.logException(message, ex);
     }
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     public logTimedMessage(timeTaken: number, message: string, ...parameters: any[]): boolean {
-        return logTimedMessage(timeTaken, message, parameters);
+        return VSLogger.logTimedMessage(timeTaken, message, parameters);
     }
 
     public performance_now(): number {
-        return performance_now();
+        return VSExtensionUtils.performance_now();
     }
 
     public expandLogicalCopyBookToFilenameOrEmpty(filename: string, inDirectory: string, config: ICOBOLSettings): string {
@@ -34,6 +35,15 @@ export class VSExternalFeatures implements IExternalFeatures{
     }
 
     public getFullWorkspaceFilename(sdir: string, sdirMs: BigInt): string | undefined {
-        return COBOLStatUtils.getFullWorkspaceFilename(sdir, sdirMs);
+        return VSCOBOLFileUtils.getFullWorkspaceFilename(sdir, sdirMs);
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    public setWorkspaceFolders(_folders: string[]) {
+        //
+    }
+
+    public getWorkspaceFolders(): string[] {
+        return [];
     }
 }

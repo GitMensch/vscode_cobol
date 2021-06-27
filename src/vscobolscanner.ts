@@ -6,8 +6,8 @@ import { FileType, TextDocument, Uri, window, workspace, debug } from 'vscode';
 import COBOLSourceScanner, { COBOLToken, COBOLTokenStyle, EmptyCOBOLSourceScannerEventHandler, ICOBOLSourceScanner, ICOBOLSourceScannerEvents, SharedSourceReferences } from "./cobolsourcescanner";
 import { InMemoryGlobalCacheHelper, InMemoryGlobalSymbolCache } from "./globalcachehelper";
 
-import { logMessage, logException, logTimedMessage, isDirectory, performance_now, logChannelSetPreserveFocus, ExternalFeatures } from "./extension";
-import { VSCOBOLConfiguration } from "./configuration";
+import { ExternalFeatures, VSExtensionUtils, VSLogger } from "./extension";
+import { VSCOBOLConfiguration } from './vsconfiguration';
 import { getWorkspaceFolders } from "./cobolfolders";
 import { ICOBOLSettings } from "./iconfiguration";
 import { COBOLSymbolTableHelper } from "./cobolglobalcache_file";
@@ -15,10 +15,10 @@ import { COBOLSymbolTable } from "./cobolglobalcache";
 import { CacheDirectoryStrategy } from "./externalfeatures";
 import { COBOLUtils } from "./cobolutils";
 import { ScanDataHelper, ScanStats } from "./cobscannerdata";
-import { VSCobScanner } from "./vscobscanner";
-import { COBOLFileUtils } from "./opencopybook";
+import { COBOLFileUtils } from "./fileutils";
 import { COBOLWorkspaceSymbolCacheHelper, TypeCategory } from "./cobolworkspacecache";
 import { VSPreProc } from "./vspreproc";
+import { VSCobScanner_depreciated } from './vscobscanner_depreciated';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const InMemoryCache: Map<string, COBOLSourceScanner> = new Map<string, COBOLSourceScanner>();
@@ -76,13 +76,13 @@ export class COBOLSymbolTableGlobalEventHelper implements ICOBOLSourceScannerEve
                 COBOLWorkspaceSymbolCacheHelper.addReferencedCopybook(token.tokenName, this.st.fileName);
                 break;
             case COBOLTokenStyle.File:
-                COBOLWorkspaceSymbolCacheHelper.addSymbol(this.st.fileName, token.tokenNameLower, token.startLine);
+                COBOLWorkspaceSymbolCacheHelper.addCalableSymbol(this.st.fileName, token.tokenNameLower, token.startLine);
                 break;
             case COBOLTokenStyle.ImplicitProgramId:
-                COBOLWorkspaceSymbolCacheHelper.addSymbol(this.st.fileName, token.tokenNameLower, token.startLine);
+                COBOLWorkspaceSymbolCacheHelper.addCalableSymbol(this.st.fileName, token.tokenNameLower, token.startLine);
                 break;
             case COBOLTokenStyle.ProgramId:
-                COBOLWorkspaceSymbolCacheHelper.addSymbol(this.st.fileName, token.tokenNameLower, token.startLine);
+                COBOLWorkspaceSymbolCacheHelper.addCalableSymbol(this.st.fileName, token.tokenNameLower, token.startLine);
                 break;
             case COBOLTokenStyle.EntryPoint:
                 COBOLWorkspaceSymbolCacheHelper.addEntryPoint(this.st.fileName, token.tokenNameLower, token.startLine);
@@ -106,7 +106,7 @@ export class COBOLSymbolTableGlobalEventHelper implements ICOBOLSourceScannerEve
         if (this.config.cache_metadata !== CacheDirectoryStrategy.Off &&
             this.qp !== undefined &&
             this.st !== undefined) {
-            COBOLSymbolTableHelper.saveToFile(this.qp.cacheDirectory, this.st);
+            COBOLSymbolTableHelper.saveToFile(this.qp.deprecatedCacheDirectory, this.st);
         }
         COBOLUtils.saveGlobalCacheToWorkspace(this.config);
     }
@@ -116,11 +116,13 @@ export default class VSCOBOLSourceScanner {
     private static readonly MAX_MEM_CACHE_SIZE = 30;
 
     public static getCachedObject(document: TextDocument, config: ICOBOLSettings): COBOLSourceScanner | undefined {
-        // const config = VSCOBOLConfiguration.get();
+        if (config.enable_source_scanner === false) {
+            return undefined;
+        }
 
         // file is too large to parse
         if (document.lineCount > config.editor_maxTokenizationLineLength) {
-            logMessage(` ${document.fileName} is not parsed, line count is ${document.lineCount} and editor.maxTokenizationLineLength is ${config.editor_maxTokenizationLineLength}`);
+            VSLogger.logMessage(` ${document.fileName} is not parsed, line count is ${document.lineCount} and editor.maxTokenizationLineLength is ${config.editor_maxTokenizationLineLength}`);
             return undefined;
         }
 
@@ -136,8 +138,8 @@ export default class VSCOBOLSourceScanner {
         // in memory document is out of sync with the on-disk document, so reparsing it
         // will give in-consistent results, especially with the debugg
         if (document.isDirty && debug.activeDebugSession !== undefined) {
-            logMessage("Source code has changed during debugging, in memory scanning suspended");
-            logMessage(` ID=${debug.activeDebugSession.id}, Name=${debug.activeDebugSession.name}, Type=${debug.activeDebugSession.type}`);
+            VSLogger.logMessage("Source code has changed during debugging, in memory scanning suspended");
+            VSLogger.logMessage(` ID=${debug.activeDebugSession.id}, Name=${debug.activeDebugSession.name}, Type=${debug.activeDebugSession.type}`);
             return undefined;
         }
 
@@ -153,17 +155,18 @@ export default class VSCOBOLSourceScanner {
                     }
                 }
 
-                const cacheDirectory: string | undefined = VSCOBOLSourceScanner.getCacheDirectory();
-                const startTime = performance_now();
+                const cacheDirectory: string | undefined = VSCOBOLSourceScanner.getDeprecatedCacheDirectory();
+                const startTime = VSExtensionUtils.performance_now();
                 const sourceHandler = new VSCodeSourceHandler(document, false);
                 const cacheData = sourceHandler.getIsSourceInWorkSpace();
+
                 const qcpd = new COBOLSourceScanner(sourceHandler, config,
                     cacheDirectory === undefined ? "" : cacheDirectory, new SharedSourceReferences(config,true),
                     config.parse_copybooks_for_references,
                     cacheData ? new COBOLSymbolTableGlobalEventHelper(config) : EmptyCOBOLSourceScannerEventHandler.Default,
                     ExternalFeatures);
 
-                logTimedMessage(performance_now() - startTime, " - Parsing " + fileName);
+                VSLogger.logTimedMessage(VSExtensionUtils.performance_now() - startTime, " - Parsing " + fileName);
 
                 if (InMemoryCache.size > VSCOBOLSourceScanner.MAX_MEM_CACHE_SIZE) {
                     // drop the smallest..
@@ -184,7 +187,7 @@ export default class VSCOBOLSourceScanner {
                 return qcpd;
             }
             catch (e) {
-                logException("getCachedObject", e);
+                VSLogger.logException("getCachedObject", e);
             }
         }
 
@@ -192,8 +195,8 @@ export default class VSCOBOLSourceScanner {
     }
 
     public static async checkWorkspaceForMissingCopybookDirs(): Promise<void> {
-        logChannelSetPreserveFocus(false);
-        logMessage("Checking workspace for folders that are not present in copybookdirs setting");
+        VSLogger.logChannelSetPreserveFocus(false);
+        VSLogger.logMessage("Checking workspace for folders that are not present in copybookdirs setting");
 
         const settings = VSCOBOLConfiguration.get();
         const ws = getWorkspaceFolders();
@@ -206,7 +209,7 @@ export default class VSCOBOLSourceScanner {
                 }
             }
         }
-        logMessage(" -- Analysis complete");
+        VSLogger.logMessage(" -- Analysis complete");
     }
 
     public static async checkWorkspaceForMissingCopybookDir(settings: ICOBOLSettings, topLevelFolder: Uri, folder: Uri): Promise<void> {
@@ -225,7 +228,7 @@ export default class VSCOBOLSourceScanner {
                             if (COBOLUtils.inCopybookdirs(settings, possibleCopydir) === false) {
                                 const copyBookCount = await VSCOBOLSourceScanner.howManyCopyBooksInDirectory(fullDirectory, settings);
                                 if (copyBookCount !== 0) {
-                                    logMessage(`  Add: ${possibleCopydir} to coboleditor.copybookdirs (possible copybooks ${copyBookCount})`);
+                                    VSLogger.logMessage(`  Add: ${possibleCopydir} to coboleditor.copybookdirs (possible copybooks ${copyBookCount})`);
                                 }
                             }
                             await VSCOBOLSourceScanner.checkWorkspaceForMissingCopybookDir(settings, topLevelFolder, Uri.file(fullDirectory));
@@ -286,8 +289,8 @@ export default class VSCOBOLSourceScanner {
         }
     }
 
-    public static clearMetaData(settings: ICOBOLSettings, cacheDirectory: string): void {
-        if (VSCobScanner.IsScannerActive(cacheDirectory)) {
+    public static deprecatedClearMetaData(settings: ICOBOLSettings, cacheDirectory: string): void {
+        if (VSCobScanner_depreciated.isDeprecatedScannerActive(cacheDirectory)) {
             window.showInformationMessage(" Unable to clear metadata while caching is already in progress");
             return;
         }
@@ -295,12 +298,12 @@ export default class VSCOBOLSourceScanner {
         window.showQuickPick(["Yes", "No"], { placeHolder: "Are you sure you want to clear the metadata?" }).then(function (data) {
             if (data === 'Yes') {
                 VSCOBOLSourceScanner.wipeCacheDirectory(cacheDirectory);
-                logMessage("Metadata cache cleared");
+                VSLogger.logMessage("Metadata cache cleared");
             }
         });
     }
 
-    public static getCacheDirectory(): string | undefined {
+    public static getDeprecatedCacheDirectory(): string | undefined {
 
         const settings = VSCOBOLConfiguration.get();
 
@@ -320,7 +323,7 @@ export default class VSCOBOLSourceScanner {
                 }
 
                 /* not a directory, so ignore */
-                if (!isDirectory(storageDirectory)) {
+                if (!COBOLFileUtils.isDirectory(storageDirectory)) {
                     return undefined;
                 }
 
@@ -333,7 +336,7 @@ export default class VSCOBOLSourceScanner {
             if (ws !== undefined) {
                 for (const folder of ws) {
                     const cacheDir2: string = path.join(folder.uri.fsPath, ".vscode_cobol");
-                    if (isDirectory(cacheDir2)) {
+                    if (COBOLFileUtils.isDirectory(cacheDir2)) {
                         return cacheDir2;
                     }
                     if (firstCacheDir === "") {
@@ -346,7 +349,7 @@ export default class VSCOBOLSourceScanner {
                 return undefined;
             }
 
-            if (isDirectory(firstCacheDir) === false) {
+            if (COBOLFileUtils.isDirectory(firstCacheDir) === false) {
                 try {
                     fs.mkdirSync(firstCacheDir);
                 }
@@ -369,6 +372,7 @@ export default class VSCOBOLSourceScanner {
 
         // if on Windows replace ${HOME} with ${USERPROFILE}
         if (COBOLFileUtils.isWin32) {
+            // eslint-disable-next-line no-template-curly-in-string
             str = str.replace(/\$\{HOME\}/, '${USERPROFILE}');
         }
 

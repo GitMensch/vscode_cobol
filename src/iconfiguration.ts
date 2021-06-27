@@ -1,4 +1,4 @@
-import { CacheDirectoryStrategy } from "./externalfeatures";
+import { CacheDirectoryStrategy, ESourceFormat } from "./externalfeatures";
 
 export enum outlineFlag {
     On = "on",
@@ -13,10 +13,15 @@ export enum formatOnReturn {
     UpperCase = "uppercase"
 }
 
+
+export interface IEditorMarginFiles {
+    pattern: string;
+    sourceformat: ESourceFormat;
+}
+
 export interface ICOBOLSettings {
     enable_tabstop: boolean;
     pre_parse_line_limit: number;
-    ignorecolumn_b_onwards: boolean;
     copybooks_nested:boolean;
     fuzzy_variable_search: boolean;
     outline: outlineFlag;
@@ -37,7 +42,7 @@ export interface ICOBOLSettings {
     intellisense_item_limit:number;
     process_metadata_cache_on_start:boolean;
     cache_metadata: CacheDirectoryStrategy;
-    cache_metadata_time_limit: number;
+    cache_metadata_inactivity_timeout: number;
     cache_metadata_max_directory_scan_depth: number;
     parse_copybooks_for_references: boolean;
     workspacefolders_order: string[];
@@ -76,12 +81,22 @@ export interface ICOBOLSettings {
 
     maintain_metadata_cache: boolean;
     maintain_metadata_cache_single_folder: boolean;
+    maintain_metadata_recursive_search: boolean;
 
     preprocessor_extensions:string[];
 
     enable_semantic_token_provider: boolean;
 
-    process_replace_verb: boolean;
+    enable_text_replacement: boolean;
+
+    editor_margin_files:IEditorMarginFiles[];
+
+    enable_source_scanner:boolean;
+
+    extend_micro_focus_cobol_extension: boolean;
+    extend_micro_focus_cobol_extension_editor: boolean;
+
+    microfocus_editor_sourceformat: string;
 }
 
 export class COBOLSettings implements ICOBOLSettings {
@@ -90,7 +105,6 @@ export class COBOLSettings implements ICOBOLSettings {
     public copybooks_nested: boolean;
     public enable_tabstop: boolean;
     public pre_parse_line_limit: number;
-    public ignorecolumn_b_onwards: boolean;
     public fuzzy_variable_search: boolean;
     public outline: outlineFlag;
     public copybookdirs: string[];
@@ -107,7 +121,7 @@ export class COBOLSettings implements ICOBOLSettings {
     public intellisense_item_limit:number;
     public process_metadata_cache_on_start:boolean;
     public cache_metadata:CacheDirectoryStrategy;
-    public cache_metadata_time_limit: number;
+    public cache_metadata_inactivity_timeout: number;
     public cache_metadata_max_directory_scan_depth: number;
     public parse_copybooks_for_references: boolean;
     public workspacefolders_order: string[];
@@ -141,18 +155,31 @@ export class COBOLSettings implements ICOBOLSettings {
     public metadata_types: string[];
     public metadata_files: string[];
     public metadata_knowncopybooks: string[];
+    
     public maintain_metadata_cache: boolean;
     public maintain_metadata_cache_single_folder: boolean;
+    public maintain_metadata_recursive_search: boolean;
 
     public preprocessor_extensions: string[];
 
     public enable_semantic_token_provider:boolean;
 
-    public process_replace_verb: boolean;
+    public enable_text_replacement: boolean;
+
+    public removed_margin:boolean;
+
+    public editor_margin_files:IEditorMarginFiles[];
+
+    public enable_source_scanner:boolean;
+
+    public extend_micro_focus_cobol_extension: boolean;
+    public extend_micro_focus_cobol_extension_editor: boolean;
+
+    public microfocus_editor_sourceformat: string;
+
     constructor() {
         this.enable_tabstop = true;
         this.pre_parse_line_limit = 25;
-        this.ignorecolumn_b_onwards = false;
         this.copybooks_nested = false;
         this.fuzzy_variable_search = false;
         this.fileformat_strategy = "normal";
@@ -173,7 +200,7 @@ export class COBOLSettings implements ICOBOLSettings {
         this.intellisense_item_limit = 30;
         this.process_metadata_cache_on_start = false;
         this.cache_metadata = CacheDirectoryStrategy.Off;
-        this.cache_metadata_time_limit = 60000;
+        this.cache_metadata_inactivity_timeout = 5000;
         this.cache_metadata_max_directory_scan_depth = 32;
         this.cache_metadata_show_progress_messages = false;
         this.parse_copybooks_for_references = false;
@@ -208,7 +235,15 @@ export class COBOLSettings implements ICOBOLSettings {
         this.metadata_knowncopybooks = [];
         this.maintain_metadata_cache = true;
         this.maintain_metadata_cache_single_folder = false;
+        this.maintain_metadata_recursive_search = false;
         this.enable_semantic_token_provider = false;
-        this.process_replace_verb = false;
+        this.enable_text_replacement= false;
+        this.removed_margin = false;
+        this.editor_margin_files = [];
+        this.enable_source_scanner = true;
+
+        this.extend_micro_focus_cobol_extension = false;
+        this.extend_micro_focus_cobol_extension_editor = false;
+        this.microfocus_editor_sourceformat = "fixed";
     }
 }

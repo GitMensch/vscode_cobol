@@ -1,9 +1,10 @@
 set +e
 if [ "x${OVSX_PATH}${OVSX_USERNAME}${OVSX_REGISTRY_URL}${OVSX_PASSWORD}" != "x" ]; then
-	echo Sorry cannot do anything due to OVSX_ env being set
+	echo "Sorry cannot do anything due to OVSX_ env being set"
 	exit 1
 fi
 
+npm run just-compile
 
 #git config core.hooksPath .githooks
 
@@ -26,6 +27,9 @@ cp ./out/cobolsourcescanner.js cobscanner/
 cp ./out/cobolworkspacecache.js cobscanner/
 cp ./out/cobapi.js cobscanner/
 cp ./out/cobapiimpl.js cobscanner/
+cp ./out/cobscanner_worker.js cobscanner/
+cp ./out/fileutils.js cobscanner/
+cp ./out/sourceformat.js cobscanner/
 cp -r ./out/keywords cobscanner/
 
 cd cobscanner
@@ -38,6 +42,9 @@ npm version --allow-same-version $PACKAGE_VERSION
 npm install
 depcheck
 touch fred.json
+echo "Checking: cobscanner cobscanner.js usethreads"
+time node cobscanner.js usethreads
+echo "Checking: cobscanner cobscanner.js fred.json"
 result=$(node cobscanner.js fred.json)
 if [ "$result" = "Unable to load fred.json" ]; then
  echo Quick confidence test okay
@@ -47,6 +54,7 @@ else
  rm -f fred.json
  exit 1
 fi
+
 rm package.json package-lock.json
 
 cd ../src
