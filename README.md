@@ -232,7 +232,7 @@ The example below shows you how you can create a single task to compile one prog
 |-----------------------------------------------|------------------------------------------------------------------|------------------------------------------------------------------------|
 | COBOL-IT                                      | *cobc*                                                           | $cobolit-cobc                                                          |
 | COBOL-IT                                      | *cobc* for errors/notes                                          | $cobolit-error-cobc + $cobolit-note-cobc                               |
-| ACU-COBOLGT                                   | *ccbl* for errors/warnings                                       | $acucobol-ccbl + $acucobol-warning-ccbl                                |
+| ACUCOBOL-GT                                   | *ccbl* for errors/warnings                                       | $acucobol-ccbl + $acucobol-warning-ccbl                                |
 | Micro Focus COBOL Net Express/Server Express  | *cob* or *cobol.exe* + ERRFORMAT"2"                              | $mfcobol-errformat2-netx-sx                                            |
 |                                               | *cob* or *cobol.exe* + ERRFORMAT"2" for errors in copybooks      | +mfcobol-errformat2-copybook-netx-sx                                   |
 |                                               | *cob* or *cobol.exe* + ERRFORMAT"3"                              | $mfcobol-errformat3-netx-sx                                            |
@@ -423,6 +423,26 @@ For example, to ensure you use utf8 for all you files use:
     }
 }
 ```
+
+## Integration with Micro Focus COBOL extension
+
+The [Micro Focus COBOL extension](https://marketplace.visualstudio.com/items?itemName=Micro-Focus-AMC.mfcobol) is new (June 2021) and has good support for debugging applications and can be used in conjuction with this extension.
+
+To enable the integration support enable the following configuration property:
+
+```json
+"coboleditor.extend_micro_focus_cobol_extension": true
+```
+
+If you specifically want to the Micro Focus COBOL extension COBOL language colouriser, you can enable the following property:
+
+```json
+"coboleditor.extend_micro_focus_cobol_extension_editor": true
+```
+
+If you are editing your "tasks.json" file, you are also provided with a tool via your right mouse context menu that allows you migrate the "problem matchers" from this extension to the Micro Focus COBOL extension.
+
+If you have enabled ```coboleditor.extend_micro_focus_cobol_extension_editor``` property the source file format is taken from the property ```microFocusCOBOL.editor.sourceFormat```.
 
 ## Tips
 

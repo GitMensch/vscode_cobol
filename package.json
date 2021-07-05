@@ -2,7 +2,7 @@
   "name": "cobol",
   "displayName": "COBOL",
   "description": "IntelliSense, highlighting, snippets, and code browsing for COBOL and more",
-  "version": "7.6.24",
+  "version": "7.7.3",
   "publisher": "bitlang",
   "keywords": [
     "cobol",
@@ -1305,6 +1305,12 @@
         "command": "cobolplugin.showCOBOLChannel",
         "category": "COBOL",
         "title": "Show COBOL Channel"
+      },
+      {
+        "command": "cobolplugin.migrateProblemMatchers",
+        "category": "COBOL",
+        "enablement": "isWorkspaceTrusted && editorTextFocus",
+        "title": "Migrate task to Micro Focus"
       }
     ],
     "menus": {
@@ -1388,6 +1394,11 @@
           "command": "cobolplugin.extractSelectionToCopybook",
           "group": "cobolplugin",
           "when": "editorTextFocus && editorLangId == cobol && editorHasSelection && coboleditor.enable_lc_cobol"
+        },
+        {
+          "command": "cobolplugin.migrateProblemMatchers",
+          "group": "cobolplugin",
+          "when": "editorTextFocus && resourceFilename == tasks.json && config.coboleditor.extend_micro_focus_cobol_extension && coboleditor.enable_migrate2mf_tasks"
         }
       ],
       "view/item/context": [
@@ -1967,19 +1978,19 @@
     "@types/glob": "^7.1.3",
     "@types/minimatch": "^3.0.4",
     "@types/mocha": "^8.2.2",
-    "@types/node": "^15.12.4",
-    "@types/vscode": "^1.57.0",
-    "@typescript-eslint/eslint-plugin": "^4.28.0",
-    "@typescript-eslint/parser": "^4.28.0",
-    "depcheck": "^1.4.1",
-    "eslint": "^7.29.0",
+    "@types/node": "^16.0.0",
+    "@types/vscode": "^1.57.1",
+    "@typescript-eslint/eslint-plugin": "^4.28.1",
+    "@typescript-eslint/parser": "^4.28.1",
+    "depcheck": "^1.4.2",
+    "eslint": "^7.30.0",
     "glob": "^7.1.7",
-    "mocha": "^9.0.1",
+    "mocha": "^9.0.2",
     "ts-loader": "^9.2.3",
-    "typescript": "^4.3.4",
-    "vsce": "^1.94.0",
+    "typescript": "^4.3.5",
+    "vsce": "^1.95.0",
     "vscode-test": "^1.5.2",
-    "webpack": "^5.40.0",
+    "webpack": "^5.42.0",
     "webpack-cli": "^4.7.2",
     "merge": "2.1.1"
   },
