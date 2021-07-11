@@ -3,6 +3,62 @@
 
 Changelog for spgennardvscode_cobol.
 
+## 7.7.9
+### GitHub [#290](https://github.com/spgennard/vscode_cobol/issues/290) Go To Definition with MF Cobol Extension  
+
+**Apply fix under property - Fix #290**
+
+* [f079adaa15d4e0a](https://github.com/spgennard/vscode_cobol/commit/f079adaa15d4e0a) *2021-07-10 09:14:51*
+
+
+
+**remove use of trie class**
+
+* [51a36c96a5b1795](https://github.com/spgennard/vscode_cobol/commit/51a36c96a5b1795) *2021-07-09 22:32:17*
+
+**tweak provider**
+
+* [4dcd938c8f26f6e](https://github.com/spgennard/vscode_cobol/commit/4dcd938c8f26f6e) *2021-07-09 20:40:32*
+
+**Update CHANGELOG.md**
+
+* [dbfe9ad1d42933d](https://github.com/spgennard/vscode_cobol/commit/dbfe9ad1d42933d) *2021-07-09 19:23:53*
+
+
+## 7.7.8
+### GitHub [#290](https://github.com/spgennard/vscode_cobol/issues/290) Go To Definition with MF Cobol Extension  
+
+**Go To Definition with MF Cobol Extension Fix #290**
+
+* [87186f847cd07a7](https://github.com/spgennard/vscode_cobol/commit/87186f847cd07a7) *2021-07-09 19:18:42*
+
+
+
+**Update CHANGELOG.md**
+
+* [cd1d2477b3085d2](https://github.com/spgennard/vscode_cobol/commit/cd1d2477b3085d2) *2021-07-09 19:22:41*
+
+**Update CHANGELOG.md**
+
+* [368fd9dce222040](https://github.com/spgennard/vscode_cobol/commit/368fd9dce222040) *2021-07-09 19:20:08*
+
+**upd**
+
+* [53b12ca3ca6c830](https://github.com/spgennard/vscode_cobol/commit/53b12ca3ca6c830) *2021-07-09 19:19:40*
+
+**remove ";1", that did not affect compilation**
+
+* [a535ae4199e8c2b](https://github.com/spgennard/vscode_cobol/commit/a535ae4199e8c2b) *2021-07-05 06:56:40*
+
+**update**
+
+* [572bb6d7debf51c](https://github.com/spgennard/vscode_cobol/commit/572bb6d7debf51c) *2021-07-04 20:27:50*
+
+**Update CHANGELOG.md**
+
+* [45641b51b093421](https://github.com/spgennard/vscode_cobol/commit/45641b51b093421) *2021-07-04 20:27:19*
+
+
 ## 7.7.3
 
 **Update CHANGELOG.md**

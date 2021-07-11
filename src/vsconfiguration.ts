@@ -86,6 +86,7 @@ export class VSCOBOLConfiguration {
 
         vsconfig.extend_micro_focus_cobol_extension = getBoolean('extend_micro_focus_cobol_extension', false);
         vsconfig.extend_micro_focus_cobol_extension_editor = getBoolean('extend_micro_focus_cobol_extension_editor', false);
+        vsconfig.extend_micro_focus_cobol_extension_editor_fix290 = getBoolean('extend_micro_focus_cobol_extension_editor_fix290', true);
         
         VSCOBOLConfiguration.setupSettingsFromMicroFocusExtension(vsconfig);
 
@@ -119,7 +120,7 @@ export class VSCOBOLConfiguration {
         vsconfig.maintain_metadata_cache = false;
         vsconfig.maintain_metadata_cache_single_folder = false;
         vsconfig.maintain_metadata_recursive_search = false;
-        vsconfig.metadata_symbols = [];1
+        vsconfig.metadata_symbols = [];
         vsconfig.metadata_entrypoints = [];
         vsconfig.metadata_types = [];
         vsconfig.metadata_files = [];
