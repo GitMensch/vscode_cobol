@@ -3,6 +3,90 @@
 
 Changelog for spgennardvscode_cobol.
 
+## 7.7.28
+
+**update**
+
+* [03c1f1dbfe91d8e](https://github.com/spgennard/vscode_cobol/commit/03c1f1dbfe91d8e) *2021-07-28 11:41:28*
+
+**Update CHANGELOG.md**
+
+* [03e2f15402a4854](https://github.com/spgennard/vscode_cobol/commit/03e2f15402a4854) *2021-07-28 11:38:50*
+
+**remove features that extended the 'Micro Focus COBOL Extension'**
+
+ * to be compliant with its license.
+* [283ef8eec470fd4](https://github.com/spgennard/vscode_cobol/commit/283ef8eec470fd4) *2021-07-28 11:32:49*
+
+**Update CHANGELOG.md**
+
+* [8805329385e4876](https://github.com/spgennard/vscode_cobol/commit/8805329385e4876) *2021-07-21 23:38:57*
+
+
+## 7.7.22
+
+**update ver**
+
+* [d2b2c3232650b12](https://github.com/spgennard/vscode_cobol/commit/d2b2c3232650b12) *2021-07-21 23:38:36*
+
+**Update CHANGELOG.md**
+
+* [67289e19fe80b4e](https://github.com/spgennard/vscode_cobol/commit/67289e19fe80b4e) *2021-07-21 23:37:04*
+
+**upd deps**
+
+* [72b9b13a95f7fd7](https://github.com/spgennard/vscode_cobol/commit/72b9b13a95f7fd7) *2021-07-21 23:36:42*
+
+**Update CHANGELOG.md**
+
+* [bfb7952f8d72332](https://github.com/spgennard/vscode_cobol/commit/bfb7952f8d72332) *2021-07-21 23:25:47*
+
+
+## 7.7.21
+
+**Update CHANGELOG.md**
+
+* [35204585cafd59d](https://github.com/spgennard/vscode_cobol/commit/35204585cafd59d) *2021-07-21 23:24:53*
+
+**add config for debugger ext**
+
+* [220f3b27f522b61](https://github.com/spgennard/vscode_cobol/commit/220f3b27f522b61) *2021-07-21 20:45:20*
+
+**Update CHANGELOG.md**
+
+* [5f73a5ebd893a29](https://github.com/spgennard/vscode_cobol/commit/5f73a5ebd893a29) *2021-07-20 22:24:23*
+
+
+## 7.7.19
+### GitHub [#293](https://github.com/spgennard/vscode_cobol/issues/293) Automatic source detection file format fails when source includes tabstops when coboleditor.enable_tabstop&#x3D;false &amp;&amp; editor.useTabStops&#x3D;true  
+
+**Do not display the margin, if the line contains tab Fix #293**
+
+* [82629684ac38243](https://github.com/spgennard/vscode_cobol/commit/82629684ac38243) *2021-07-20 22:12:36*
+
+
+
+**prep**
+
+* [aeea7ace75996b0](https://github.com/spgennard/vscode_cobol/commit/aeea7ace75996b0) *2021-07-20 22:23:47*
+
+**disable it, for the moment**
+
+* [475200e15d5bc28](https://github.com/spgennard/vscode_cobol/commit/475200e15d5bc28) *2021-07-20 22:22:59*
+
+**add start of the debugger extension for special registers scope**
+
+* [a799b9afe651b51](https://github.com/spgennard/vscode_cobol/commit/a799b9afe651b51) *2021-07-20 22:22:12*
+
+**tidy code**
+
+* [19832c72552e98c](https://github.com/spgennard/vscode_cobol/commit/19832c72552e98c) *2021-07-20 22:15:55*
+
+**Update CHANGELOG.md**
+
+* [da283905fb34db9](https://github.com/spgennard/vscode_cobol/commit/da283905fb34db9) *2021-07-10 09:26:59*
+
+
 ## 7.7.9
 ### GitHub [#290](https://github.com/spgennard/vscode_cobol/issues/290) Go To Definition with MF Cobol Extension  
 

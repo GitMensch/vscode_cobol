@@ -92,12 +92,6 @@ export interface ICOBOLSettings {
     editor_margin_files:IEditorMarginFiles[];
 
     enable_source_scanner:boolean;
-
-    extend_micro_focus_cobol_extension: boolean;
-    extend_micro_focus_cobol_extension_editor: boolean;
-    extend_micro_focus_cobol_extension_editor_fix290: boolean;
-
-    microfocus_editor_sourceformat: string;
 }
 
 export class COBOLSettings implements ICOBOLSettings {
@@ -173,12 +167,6 @@ export class COBOLSettings implements ICOBOLSettings {
 
     public enable_source_scanner:boolean;
 
-    public extend_micro_focus_cobol_extension: boolean;
-    public extend_micro_focus_cobol_extension_editor: boolean;
-    public extend_micro_focus_cobol_extension_editor_fix290: boolean;
-
-    public microfocus_editor_sourceformat: string;
-
     constructor() {
         this.enable_tabstop = true;
         this.pre_parse_line_limit = 25;
@@ -243,11 +231,5 @@ export class COBOLSettings implements ICOBOLSettings {
         this.removed_margin = false;
         this.editor_margin_files = [];
         this.enable_source_scanner = true;
-
-        this.extend_micro_focus_cobol_extension = false;
-        this.extend_micro_focus_cobol_extension_editor = false;
-        this.extend_micro_focus_cobol_extension_editor_fix290 = true;
-        
-        this.microfocus_editor_sourceformat = "fixed";
     }
 }

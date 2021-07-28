@@ -115,19 +115,24 @@ export default async function updateDecorations(activeTextEditor: TextEditor | u
             const lineText = doc.lineAt(i);
             const line = lineText.text;
 
-            if (line.length > 6) {
-                const startPos = new Position(i, 0);
-                const endPos = new Position(i, 6);
-                const decoration = { range: new Range(startPos, endPos) };
-                decorationOptions.push(decoration);
-            }
+            // only do it, if we have no tabs on the line..
+            const containsTab = line.indexOf('\t');
 
-            if (line.length > 72) {
-                const startPos = new Position(i, 72);
-                // only colour 72-80
-                const endPos = new Position(i, (line.length < 80 ? line.length : 80));
-                const decoration = { range: new Range(startPos, endPos) };
-                decorationOptions.push(decoration);
+            if (containsTab === -1) {
+                if (line.length > 6) {
+                    const startPos = new Position(i, 0);
+                    const endPos = new Position(i, 6);
+                    const decoration = { range: new Range(startPos, endPos) };
+                    decorationOptions.push(decoration);
+                }
+
+                if (line.length > 72) {
+                    const startPos = new Position(i, 72);
+                    // only colour 72-80
+                    const endPos = new Position(i, (line.length < 80 ? line.length : 80));
+                    const decoration = { range: new Range(startPos, endPos) };
+                    decorationOptions.push(decoration);
+                }
             }
         }
     }

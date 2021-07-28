@@ -2,7 +2,7 @@
   "name": "cobol",
   "displayName": "COBOL",
   "description": "IntelliSense, highlighting, snippets, and code browsing for COBOL and more",
-  "version": "7.7.9",
+  "version": "7.7.28",
   "publisher": "bitlang",
   "keywords": [
     "cobol",
@@ -26,7 +26,7 @@
     "email": "stephen@gennard.net"
   },
   "engines": {
-    "vscode": "^1.58.0"
+    "vscode": "^1.58.1"
   },
   "extensionKind": [
     "workspace"
@@ -734,21 +734,6 @@
           "type": "boolean",
           "description": "Scan source code (default true)",
           "default": true
-        },
-        "coboleditor.extend_micro_focus_cobol_extension": {
-          "type": "boolean",
-          "description": "Extend the Micro Focus COBOL Extension with functionality from this extension.",
-          "default": false
-        },
-        "coboleditor.extend_micro_focus_cobol_extension_editor": {
-          "type": "boolean",
-          "description": "Use 'Micro Focus' extension for editing files",
-          "default": false
-        },
-        "coboleditor.extend_micro_focus_cobol_extension_editor_fix290": {
-          "type": "boolean",
-          "description": "Apply fix for issue290 (when MF extension active) [restart required if changed]",
-          "default": true
         }
       }
     },
@@ -1399,11 +1384,6 @@
           "command": "cobolplugin.extractSelectionToCopybook",
           "group": "cobolplugin",
           "when": "editorTextFocus && editorLangId == cobol && editorHasSelection && coboleditor.enable_lc_cobol"
-        },
-        {
-          "command": "cobolplugin.migrateProblemMatchers",
-          "group": "cobolplugin",
-          "when": "editorTextFocus && resourceFilename == tasks.json && config.coboleditor.extend_micro_focus_cobol_extension && coboleditor.enable_migrate2mf_tasks"
         }
       ],
       "view/item/context": [
@@ -1982,20 +1962,20 @@
   "devDependencies": {
     "@types/glob": "^7.1.4",
     "@types/minimatch": "^3.0.5",
-    "@types/mocha": "^8.2.3",
-    "@types/node": "^16.3.0",
-    "@types/vscode": "^1.58.0",
-    "@typescript-eslint/eslint-plugin": "^4.28.2",
-    "@typescript-eslint/parser": "^4.28.2",
+    "@types/mocha": "^9.0.0",
+    "@types/node": "^16.4.5",
+    "@types/vscode": "^1.58.1",
+    "@typescript-eslint/eslint-plugin": "^4.28.5",
+    "@typescript-eslint/parser": "^4.28.5",
     "depcheck": "^1.4.2",
-    "eslint": "^7.30.0",
+    "eslint": "^7.31.0",
     "glob": "^7.1.7",
-    "mocha": "^9.0.2",
-    "ts-loader": "^9.2.3",
+    "mocha": "^9.0.3",
+    "ts-loader": "^9.2.4",
     "typescript": "^4.3.5",
-    "vsce": "^1.95.1",
-    "vscode-test": "^1.5.2",
-    "webpack": "^5.44.0",
+    "vsce": "^1.96.1",
+    "vscode-test": "^1.6.1",
+    "webpack": "^5.47.0",
     "webpack-cli": "^4.7.2",
     "merge": "2.1.1"
   },

@@ -36,17 +36,6 @@ function isValidFixedLine(line: string): boolean {
 export function getCOBOLSourceFormat(doc: ISourceHandler, config: ICOBOLSettings): ESourceFormat {
     const langid = doc.getLanguageId();
 
-    // if we are using the micro focus extension and the editor is langid of 'cobol'
-    if (config.extend_micro_focus_cobol_extension) {
-        if (config.extend_micro_focus_cobol_extension_editor || langid === 'cobol') {
-            switch(config.microfocus_editor_sourceformat) {
-                case "fixed" : return ESourceFormat.fixed;
-                case "variable" : return ESourceFormat.variable;
-                case "free" : return ESourceFormat.free;
-            }
-        }
-    }
-
     if (config.fileformat_strategy === "always_fixed") {
         return ESourceFormat.fixed;
     }
@@ -64,7 +53,7 @@ export function getCOBOLSourceFormat(doc: ISourceHandler, config: ICOBOLSettings
 
     for (let i = 0; i < maxLines; i++) {
 
-        let lineText = doc.getLine(i, true);
+        let lineText = doc.getLineTabExpanded(i);
         if (lineText === undefined) {
             break;
         }
@@ -74,6 +63,7 @@ export function getCOBOLSourceFormat(doc: ISourceHandler, config: ICOBOLSettings
             skippedLines++;
             continue;
         }
+
         const line = lineText.toLowerCase();
         const validFixedLine = isValidFixedLine(line);
         if (validFixedLine) {
