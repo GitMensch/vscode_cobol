@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 'use strict';
 
 import * as path from 'path';
@@ -12,11 +13,10 @@ import { VSLogger } from './extension';
 export class VSCOBOLConfiguration {
     private static config: ICOBOLSettings = new COBOLSettings();
 
-    public static init(): ICOBOLSettings {
+    private static init(): ICOBOLSettings {
         const vsconfig = VSCOBOLConfiguration.config;
         vsconfig.enable_tabstop = getBoolean('enable_tabstop', false);
         vsconfig.copybooks_nested = getBoolean('copybooks_nested', false);
-        vsconfig.fuzzy_variable_search = getBoolean('fuzzy_variable_search', false);
         vsconfig.outline = isOutlineEnabled();
         vsconfig.copybookdirs = getCopybookdirs_defaults(vsconfig.invalid_copybookdirs);
         vsconfig.pre_parse_line_limit = getPreParseLineLimit();
@@ -84,6 +84,21 @@ export class VSCOBOLConfiguration {
 
         vsconfig.enable_source_scanner = getBoolean('enable_source_scanner', true);
 
+        const user_cobol_language_ids = workspace.getConfiguration('coboleditor').get<string[]>("valid_cobol_language_ids", vsconfig.valid_cobol_language_ids);
+        let valid = true;
+        
+        for(const languageId of user_cobol_language_ids) {
+            // same regex as package.json
+            const validReg = new RegExp("(^cobol$|^COBOL$|^COBOLIT$|^ACUCOBOL$|^COBOL_MF_LISTFILE$)","gm");
+            if (!validReg.test(languageId)) {
+                valid = false;
+            }
+        }
+
+        if (valid) {
+            vsconfig.valid_cobol_language_ids = user_cobol_language_ids;
+        }
+
         if (!workspace.isTrusted) {
             VSCOBOLConfiguration.adjustForUntructedEnv(vsconfig);
         }
@@ -138,7 +153,7 @@ export class VSCOBOLConfiguration {
 
             if (!VSCOBOLConfiguration.logCacheMetadataDone) {
                 VSLogger.logMessage("WARNING: Both coboleditor.maintain_metadata_cache and the depreciated coboleditor.cache_metadata are active");
-                VSLogger.logMessage("         cache_metadata turned off, please review settings")
+                VSLogger.logMessage("         cache_metadata turned off, please review settings");
                 VSCOBOLConfiguration.logCacheMetadataDone = true;
             }
         }
@@ -152,6 +167,11 @@ export class VSCOBOLConfiguration {
         return VSCOBOLConfiguration.config;
     }
 
+
+    public static reinit() : ICOBOLSettings {
+        VSCOBOLConfiguration.config.init_required = true;
+        return VSCOBOLConfiguration.get();
+    }
 
     public static isDepreciatedDiskCachingEnabled(): boolean {
         const config = VSCOBOLConfiguration.get();

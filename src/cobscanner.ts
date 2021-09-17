@@ -189,7 +189,7 @@ export class Scanner {
                 }
             }
         } catch (e) {
-            features.logException("cobscanner", e);
+            features.logException("cobscanner", e as Error);
             aborted = true;
         } finally {
             stats.endTime = Utils.performance_now() - stats.start;
@@ -228,7 +228,7 @@ for (const arg of args) {
             if (e instanceof SyntaxError) {
                 features.logMessage(`Unable to load ${arg}`);
             } else {
-                features.logException("cobscanner", e);
+                features.logException("cobscanner", e as Error);
             }
         }
     }
@@ -254,7 +254,7 @@ for (const arg of args) {
                     if (e instanceof SyntaxError) {
                         features.logMessage(`Unable to load ${arg}`);
                     } else {
-                        features.logException("cobscanner", e);
+                        features.logException("cobscanner", e as Error);
                     }
                 }
             }
@@ -291,7 +291,7 @@ for (const arg of args) {
                         Scanner.processFileShowHeader(combinedStats, features);
                         for (i = 0, j = files.length; i < j; i += chunkSize) {
                             const sfFileChunk = files.slice(i, i + chunkSize);
-                            const scanData: ScanData = { ...baseScanData }
+                            const scanData: ScanData = { ...baseScanData };
                             scanData.Files = sfFileChunk;
                             scanData.fileCount = sfFileChunk.length;
                             const wtd = new workerThreadData(scanData);
@@ -326,11 +326,11 @@ for (const arg of args) {
                                     features.logMessage(`${COBSCANNER_STATUS} 100`);
                                     Scanner.processFileShowFooter(combinedStats, features, false);
                                 }
-                            })
+                            });
                         }
                     }
                 } catch (e) {
-                    features.logException("cobscanner", e);
+                    features.logException("cobscanner", e as Error);
                 } finally {
                     //
                 }

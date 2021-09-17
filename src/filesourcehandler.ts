@@ -51,7 +51,7 @@ export class FileSourceHandler implements ISourceHandler {
             features.logTimedMessage(features.performance_now() - startTime, ' - Loading File ' + document);
         }
         catch (e) {
-            features.logException("File failed! (" + document + ")", e);
+            features.logException("File failed! (" + document + ")", e as Error);
         }
     }
 
@@ -99,6 +99,7 @@ export class FileSourceHandler implements ISourceHandler {
                 line = line.substring(0, startComment);
                 this.commentCount++;
             }
+
             // drop fixed format line
             if (line.length > 1 && line[0] === '*') {
                 this.commentCount++;
@@ -107,9 +108,11 @@ export class FileSourceHandler implements ISourceHandler {
             }
 
             // drop fixed format line
-            if (line.length > 7 && line[6] === '*') {
+            if (line.length >= 7 && (line[6] === '*' || line[6] === '/') ) {
                 this.commentCount++;
-                this.sendCommentCallback(line, lineNumber);
+                if (line[6] === '/') {
+                    this.sendCommentCallback(line, lineNumber);
+                }
                 return "";
             }
 

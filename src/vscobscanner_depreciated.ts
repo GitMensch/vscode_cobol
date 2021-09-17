@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/naming-convention */
 import path from "path";
 import fs from 'fs';
 import tempDirectory from 'temp-dir';
@@ -37,7 +38,8 @@ export class VSCobScanner_depreciated {
         try {
             return process.kill(pid, 0);
         }
-        catch (e) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        catch (e:any) {
             return e.code === 'EPERM';
         }
     }
@@ -123,7 +125,7 @@ export class VSCobScanner_depreciated {
                                 if (ex instanceof Error) {
                                     VSLogger.logException("Unexpected abort during Uri Parse", ex as Error);
                                 } else {
-                                    VSLogger.logMessage(ex);
+                                    VSLogger.logMessage((ex as Error).message);
                                 }
                             }
                         }
@@ -254,9 +256,9 @@ export class VSCobScanner_depreciated {
 
         const timer = setTimeout(function () {
             try {
-                child.kill()
+                child.kill();
             } catch (err) {
-                VSLogger.logException(`Timeout, ${reason}`, err);
+                VSLogger.logException(`Timeout, ${reason}`, err as Error);
             }
         }, settings.cache_metadata_inactivity_timeout);
 

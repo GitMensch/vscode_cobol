@@ -495,7 +495,7 @@ export class copybookState implements IReplaceState {
     public endLineNumber = 0;
     public endCol = 0;
     public startCol = 0;
-    public line = ""
+    public line = "";
     public copyVerb = "";
     public literal2 = "";
     public library_name = "";
@@ -704,7 +704,7 @@ export class CallTargetInformation {
 }
 
 export interface ICOBOLSourceScannerEventer {
-    sendMessage(message:string):void;
+    sendMessage(message: string): void;
 }
 
 export interface ICOBOLSourceScannerEvents {
@@ -969,7 +969,7 @@ export default class COBOLSourceScanner implements ICommentCallback, ICOBOLSourc
 
                 }
                 catch (e) {
-                    this.externalFeatures.logException("COBOLScannner - Parse error : " + e, e);
+                    this.externalFeatures.logException("COBOLScannner - Parse error : " + e, e as Error);
                 }
             }
 
@@ -982,7 +982,7 @@ export default class COBOLSourceScanner implements ICommentCallback, ICOBOLSourc
                 if (preParseState.procedureDivisionRelatedTokens !== 0 && preParseState.procedureDivisionRelatedTokens > preParseState.workingStorageRelatedTokens) {
                     this.ImplicitProgramId = "";
 
-                    const fakeDivision = this.newCOBOLToken(COBOLTokenStyle.Division, 0, "Procedure Division", 0, "Procedure", "Procedure Division (CopyBook)", state.currentDivision);
+                    const fakeDivision = this.newCOBOLToken(COBOLTokenStyle.Division, 0, "Procedure Division", 0, "Procedure", "Procedure Division (CopyBook)", state.currentDivision);                    
                     state.currentDivision = fakeDivision;
                     state.procedureDivision = fakeDivision;
                     state.pickFields = false;
@@ -990,6 +990,8 @@ export default class COBOLSourceScanner implements ICommentCallback, ICOBOLSourc
                     sourceLooksLikeCOBOL = true;
                     fakeDivision.ignoreInOutlineView = true;
                     this.sourceIsCopybook = true;
+                    state.endsWithDot = true;
+                    state.prevEndsWithDot = true;
                 }
                 else if ((preParseState.workingStorageRelatedTokens !== 0 && preParseState.numberTokensInHeader !== 0)) {
                     const fakeDivision = this.newCOBOLToken(COBOLTokenStyle.Division, 0, "Data Division", 0, "Data", "Data Division (CopyBook)", state.currentDivision);
@@ -1097,7 +1099,7 @@ export default class COBOLSourceScanner implements ICommentCallback, ICOBOLSourc
                                 copybooks.clear();
                             }
                         } catch (e) {
-                            externalFeatures.logException("pp", e);
+                            externalFeatures.logException("pp", e as Error);
                         }
                     }
 
@@ -1139,7 +1141,7 @@ export default class COBOLSourceScanner implements ICommentCallback, ICOBOLSourc
                 }
             }
             catch (e) {
-                this.externalFeatures.logException("COBOLScannner - Parse error", e);
+                this.externalFeatures.logException("COBOLScannner - Parse error", e as Error);
             }
         }
 
@@ -1204,7 +1206,7 @@ export default class COBOLSourceScanner implements ICommentCallback, ICOBOLSourc
                     if (addReference) {
                         this.transferReference(strRef, sourceRefs, this.sourceReferences.constantsOrVariablesReferences, ttype);
                     }
-                    vcount++
+                    vcount++;
                 }
                 else if (this.isVisibleSection(strRef)) {
                     this.transferReference(strRef, sourceRefs, this.sourceReferences.targetReferences, COBOLTokenStyle.Section);
@@ -1434,7 +1436,7 @@ export default class COBOLSourceScanner implements ICommentCallback, ICOBOLSourc
             return !isNaN(Number(value.toString()));
         }
         catch (e) {
-            this.externalFeatures.logException("isNumber(" + value + ")", e);
+            this.externalFeatures.logException("isNumber(" + value + ")", e as Error);
             return false;
         }
     }
@@ -1641,7 +1643,7 @@ export default class COBOLSourceScanner implements ICommentCallback, ICOBOLSourc
                 }
             }
             catch (e) {
-                this.externalFeatures.logException("COBOLScannner relaxedParseLineByLine line error: ", e);
+                this.externalFeatures.logException("COBOLScannner relaxedParseLineByLine line error: ", e as Error);
             }
         }
         while (token.moveToNextToken() === false);
@@ -1714,7 +1716,7 @@ export default class COBOLSourceScanner implements ICommentCallback, ICOBOLSourc
 
                     if (rightLine !== rightLineOrg) {
                         try {
-                            const leftLine = line.substr(0, token.currentCol)
+                            const leftLine = line.substr(0, token.currentCol);
 
                             this.sourceHandler.setUpdatedLine(lineNumber, leftLine + rightLine);
                             const lastTokenId = this.tokensInOrder.length;
@@ -1731,7 +1733,7 @@ export default class COBOLSourceScanner implements ICommentCallback, ICOBOLSourc
                             }
                             return retToken;
                         } catch (e) {
-                            this.externalFeatures.logException("replace", e);
+                            this.externalFeatures.logException("replace", e as Error);
                         }
                     }
                 }
@@ -2335,6 +2337,8 @@ export default class COBOLSourceScanner implements ICommentCallback, ICOBOLSourc
                                 }
 
                                 let extraInfo = prevToken;
+                                let redefinesPresent = false;
+                                let occursPresent = false;
                                 if (prevToken === '01' || prevToken === '1') {
                                     if (nextTokenLower === 'redefines') {
                                         extraInfo += "-GROUP";
@@ -2347,8 +2351,19 @@ export default class COBOLSourceScanner implements ICommentCallback, ICOBOLSourc
                                     if (token.isTokenPresent("constant")) {
                                         style = COBOLTokenStyle.Constant;
                                     }
-                                    if (token.isTokenPresent("redefines")) {
+
+                                    redefinesPresent = token.isTokenPresent("redefines");
+                                    if (redefinesPresent) {
                                         style = COBOLTokenStyle.Union;
+                                    }
+                                } else {
+                                    if (nextTokenLower.length === 0) {
+                                        extraInfo += "-GROUP";
+                                    }
+
+                                    occursPresent = token.isTokenPresent("occurs");
+                                    if (occursPresent) {
+                                        extraInfo += "-OCCURS";
                                     }
                                 }
 
@@ -2370,7 +2385,7 @@ export default class COBOLSourceScanner implements ICommentCallback, ICOBOLSourc
                                 if (prevToken === '01' || prevToken === '1' ||
                                     prevToken === '66' || prevToken === '77' || prevToken === '78') {
                                     if (nextTokenLower.length === 0 ||
-                                        nextTokenLower === 'redefines' ||
+                                        redefinesPresent || occursPresent ||
                                         (state.currentSection.tokenNameLower === "report" && nextTokenLower === "type")) {
                                         state.current01Group = ctoken;
                                     } else {
@@ -2510,7 +2525,7 @@ export default class COBOLSourceScanner implements ICommentCallback, ICOBOLSourc
                 }
             }
             catch (e) {
-                this.externalFeatures.logException("COBOLScannner line error: ", e);
+                this.externalFeatures.logException("COBOLScannner line error: ", e as Error);
             }
         }
         while (token.moveToNextToken() === false);
