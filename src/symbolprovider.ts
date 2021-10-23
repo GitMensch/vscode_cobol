@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { COBOLTokenStyle, splitArgument } from './cobolsourcescanner';
 import { VSCOBOLConfiguration } from './vsconfiguration';
-import { VSLogger } from './extension';
+import { VSLogger } from './vslogger';
 import { outlineFlag } from './iconfiguration';
 import VSCOBOLSourceScanner from './vscobolscanner';
 import { VSPreProc } from './vspreproc';
@@ -75,7 +75,7 @@ export class JCLDocumentSymbolProvider implements vscode.DocumentSymbolProvider 
     }
 }
 
-export class CobolDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
+export class CobolSymbolInformationProvider implements vscode.DocumentSymbolProvider {
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     public async provideDocumentSymbols(document: vscode.TextDocument, canceltoken: vscode.CancellationToken): Promise<vscode.SymbolInformation[]> {
@@ -148,9 +148,6 @@ export class CobolDocumentSymbolProvider implements vscode.DocumentSymbolProvide
                             }
                             symbols.push(new vscode.SymbolInformation(token.description, vscode.SymbolKind.Method, container, lrange));
                             break;
-                        case COBOLTokenStyle.DeclarativesSection:
-                            symbols.push(new vscode.SymbolInformation(token.description, vscode.SymbolKind.Method, container, lrange));
-                            break;
                         case COBOLTokenStyle.Section:
                             if (includeSections === false) {
                                 break;
@@ -180,16 +177,16 @@ export class CobolDocumentSymbolProvider implements vscode.DocumentSymbolProvide
                                 continue;
                             }
 
-                            if (token.extraInformation === 'fd' || token.extraInformation === 'sd'
-                                || token.extraInformation === 'rd' || token.extraInformation === 'select') {
+                            if (token.extraInformation1 === 'fd' || token.extraInformation1 === 'sd'
+                                || token.extraInformation1 === 'rd' || token.extraInformation1 === 'select') {
                                 symbols.push(new vscode.SymbolInformation(token.description, vscode.SymbolKind.File, container, lrange));
                             }
                             else {
-                                if (token.extraInformation.endsWith("-GROUP")) {
+                                if (token.extraInformation1.endsWith("-GROUP")) {
                                     symbols.push(new vscode.SymbolInformation(token.description, vscode.SymbolKind.Struct, container, lrange));
-                                } else if (token.extraInformation.endsWith("88")) {
+                                } else if (token.extraInformation1.endsWith("88")) {
                                     symbols.push(new vscode.SymbolInformation(token.description, vscode.SymbolKind.EnumMember, container, lrange));
-                                } else if (token.extraInformation.endsWith("-OCCURS")) {
+                                } else if (token.extraInformation1.endsWith("-OCCURS")) {
                                     symbols.push(new vscode.SymbolInformation(token.description, vscode.SymbolKind.Array, container, lrange));
                                 } else {
                                     symbols.push(new vscode.SymbolInformation(token.description, vscode.SymbolKind.Field, container, lrange));

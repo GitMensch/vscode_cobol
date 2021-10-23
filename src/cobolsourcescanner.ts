@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import ISourceHandler, { ICommentCallback } from "./isourcehandler";
-import { cobolKeywordDictionary, cobolProcedureKeywordDictionary, cobolStorageKeywordDictionary } from "./keywords/cobolKeywords";
+import { cobolProcedureKeywordDictionary, cobolStorageKeywordDictionary, getCOBOLKeywordDictionary } from "./keywords/cobolKeywords";
 
 import { FileSourceHandler } from "./filesourcehandler";
 import { COBOLFileSymbol, COBOLWorkspaceFile } from "./cobolglobalcache";
@@ -124,6 +124,7 @@ export enum COBOLTokenStyle {
     EntryPoint = "Entry",
     Variable = "Variable",
     ConditionName = "ConditionName",
+    RenameLevel = "RenameLevel",
     Constant = "Constant",
     Union = "Union",
     EndDelimiter = "EndDelimiter",
@@ -131,7 +132,6 @@ export enum COBOLTokenStyle {
     EndExec = "EndExec",
     Declaratives = "Declaratives",
     EndDeclaratives = "EndDeclaratives",
-    DeclarativesSection = "DeclarativesSection",
     Unknown = "Unknown",
     Null = "Null"
 }
@@ -252,7 +252,7 @@ export class COBOLToken {
     public endLine: number;
     public endColumn: number;
     public inProcedureDivision: boolean;
-    public extraInformation: string;
+    public extraInformation1: string;
     public inSection: COBOLToken;
 
     static Null: COBOLToken = new COBOLToken("", COBOLTokenStyle.Null, -1, 0, "", "", undefined, false, "");
@@ -262,7 +262,7 @@ export class COBOLToken {
     }
 
     public constructor(filename: string, tokenType: COBOLTokenStyle, startLine: number, startColumn: number, token: string, description: string,
-        parentToken: COBOLToken | undefined, inProcedureDivision: boolean, extraInformation: string) {
+        parentToken: COBOLToken | undefined, inProcedureDivision: boolean, extraInformation1: string) {
         this.ignoreInOutlineView = false;
         this.filename = filename;
         this.tokenType = tokenType;
@@ -275,7 +275,7 @@ export class COBOLToken {
         this.endColumn = this.startColumn + this.tokenName.length;
         this.parentToken = parentToken;
         this.inProcedureDivision = inProcedureDivision;
-        this.extraInformation = extraInformation;
+        this.extraInformation1 = extraInformation1;
         this.inSection = COBOLToken.Null;
 
         if (this.tokenName.length !== 0) {
@@ -768,9 +768,9 @@ export default class COBOLSourceScanner implements ICommentCallback, ICOBOLSourc
     public sourceFileId: number;
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    public cpPerformTargets: any | undefined = undefined;
+    public cache4PerformTargets: any | undefined = undefined;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    public cpConstantsOrVars: any | undefined = undefined;
+    public cache4ConstantsOrVars: any | undefined = undefined;
 
     public ImplicitProgramId = "";
 
@@ -872,8 +872,8 @@ export default class COBOLSourceScanner implements ICommentCallback, ICOBOLSourc
         this.methods = new Map<string, COBOLToken>();
         this.diagWarnings = new Map<string, COBOLFileSymbol>();
         this.parse4References = sourceHandler !== null;
-        this.cpPerformTargets = undefined;
-        this.cpConstantsOrVars = undefined;
+        this.cache4PerformTargets = undefined;
+        this.cache4ConstantsOrVars = undefined;
 
         let sourceLooksLikeCOBOL = false;
         let prevToken: Token = Token.Blank;
@@ -982,7 +982,7 @@ export default class COBOLSourceScanner implements ICommentCallback, ICOBOLSourc
                 if (preParseState.procedureDivisionRelatedTokens !== 0 && preParseState.procedureDivisionRelatedTokens > preParseState.workingStorageRelatedTokens) {
                     this.ImplicitProgramId = "";
 
-                    const fakeDivision = this.newCOBOLToken(COBOLTokenStyle.Division, 0, "Procedure Division", 0, "Procedure", "Procedure Division (CopyBook)", state.currentDivision);                    
+                    const fakeDivision = this.newCOBOLToken(COBOLTokenStyle.Division, 0, "Procedure Division", 0, "Procedure", "Procedure Division (CopyBook)", state.currentDivision);
                     state.currentDivision = fakeDivision;
                     state.procedureDivision = fakeDivision;
                     state.pickFields = false;
@@ -1276,7 +1276,7 @@ export default class COBOLSourceScanner implements ICommentCallback, ICOBOLSourc
 
     private newCOBOLToken(tokenType: COBOLTokenStyle, startLine: number, _line: string, currentCol: number, token: string,
         description: string, parentToken: COBOLToken,
-        extraInformation = ""): COBOLToken {
+        extraInformation1 = ""): COBOLToken {
 
         const state: ParseState = this.sourceReferences.state;
         let startColumn = _line.indexOf(token, currentCol);
@@ -1286,7 +1286,7 @@ export default class COBOLSourceScanner implements ICommentCallback, ICOBOLSourc
                 startColumn = 0;
             }
         }
-        const ctoken = new COBOLToken(this.filename, tokenType, startLine, startColumn, token, description, parentToken, state.inProcedureDivision, extraInformation);
+        const ctoken = new COBOLToken(this.filename, tokenType, startLine, startColumn, token, description, parentToken, state.inProcedureDivision, extraInformation1);
         ctoken.ignoreInOutlineView = state.ignoreInOutlineView;
         ctoken.inSection = this.sourceReferences.state.currentSection;
 
@@ -1417,7 +1417,7 @@ export default class COBOLSourceScanner implements ICommentCallback, ICOBOLSourc
     }
 
     private isValidKeyword(keyword: string): boolean {
-        return cobolKeywordDictionary.has(keyword);
+        return getCOBOLKeywordDictionary(this.sourceHandler.getLanguageId()).has(keyword);
     }
 
     private isValidProcedureKeyword(keyword: string): boolean {
@@ -1988,9 +1988,10 @@ export default class COBOLSourceScanner implements ICommentCallback, ICOBOLSourc
                 if (prevTokenLower === "end" && currentLower === "declaratives") {
                     state.declaratives.endLine = lineNumber;
                     state.declaratives.endColumn = line.indexOf(tcurrent);
-                    // this.tokensInOrder.push(state.declaratives);
                     state.inDeclaratives = false;
                     state.declaratives = COBOLToken.Null;
+                    state.declaratives = this.newCOBOLToken(COBOLTokenStyle.EndDeclaratives, lineNumber, line, tcurrentCurrentCol, current, current, state.currentDivision);
+
                     continue;
                 }
 
@@ -2256,7 +2257,7 @@ export default class COBOLSourceScanner implements ICommentCallback, ICOBOLSourc
                 }
 
 
-                if (currentLower === "declaratives") {
+                if (prevTokenLower !== 'end' && currentLower === "declaratives") {
                     state.declaratives = this.newCOBOLToken(COBOLTokenStyle.Declaratives, lineNumber, line, tcurrentCurrentCol, current, current, state.currentDivision);
                     state.inDeclaratives = true;
                     // this.tokensInOrder.pop();       /* only interested it at the end */
@@ -2329,11 +2330,16 @@ export default class COBOLSourceScanner implements ICommentCallback, ICOBOLSourc
                                 let style = COBOLTokenStyle.Variable;
                                 const nextTokenLower = token.nextSTokenOrBlank().currentTokenLower;
 
-                                if (prevToken === "78") {
-                                    style = COBOLTokenStyle.Constant;
-                                }
-                                if (prevToken === "88") {
-                                    style = COBOLTokenStyle.ConditionName;
+                                switch (prevToken) {
+                                    case "78":
+                                        style = COBOLTokenStyle.Constant;
+                                        break;
+                                    case "88":
+                                        style = COBOLTokenStyle.ConditionName;
+                                        break;
+                                    case "66":
+                                        style = COBOLTokenStyle.RenameLevel;
+                                        break;
                                 }
 
                                 let extraInfo = prevToken;
@@ -2573,7 +2579,7 @@ export default class COBOLSourceScanner implements ICommentCallback, ICOBOLSourc
             this.copyBooksUsed.set(trimmedCopyBook, copybookToken);
 
             if (this.sourceReferences !== undefined && this.parse_copybooks_for_references) {
-                const fileName = this.externalFeatures.expandLogicalCopyBookToFilenameOrEmpty(trimmedCopyBook, copyToken.extraInformation, this.configHandler);
+                const fileName = this.externalFeatures.expandLogicalCopyBookToFilenameOrEmpty(trimmedCopyBook, copyToken.extraInformation1, this.configHandler);
                 if (fileName.length > 0) {
                     cbInfo.fileName = fileName;
                     if (this.copyBooksUsed.has(fileName) === false) {

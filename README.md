@@ -44,16 +44,38 @@ Everywhere Visual Studio Code works.
 
 ## Keybindings
 
-| Keys                     |                          Description                            |
-|--------------------------|:---------------------------------------------------------------:|
-| ctrl+alt+p               |                    Go to procedure division                     |
-| ctrl+alt+w               |                  Go to working-storage section                  |
-| ctrl+alt+d               | Go to data division (or working-storage section if not present) |
-| ctrl+alt+,               |             Go backwards to next section/division               |
-| ctrl+alt+.               |            Go forward to next next section/division             |
-| f12 or ctrl+click        |                     Go to copybook/file                         |
-| ctrl+hover               |                     Peek head of copybook or symbol/field       |
-| right mouse/peek         |            Peek copybook without opening the file)              |
+| Keys              |                           Description                           |
+|-------------------|:---------------------------------------------------------------:|
+| ctrl+alt+p        |                    Go to procedure division                     |
+| ctrl+alt+w        |                  Go to working-storage section                  |
+| ctrl+alt+d        | Go to data division (or working-storage section if not present) |
+| ctrl+alt+,        |              Go backwards to next section/division              |
+| ctrl+alt+.        |            Go forward to next next section/division             |
+| f12 or ctrl+click |                       Go to copybook/file                       |
+| ctrl+hover        |              Peek head of copybook or symbol/field              |
+| right mouse/peek  |             Peek copybook without opening the file)             |
+| ctrl+alt+a        |                 Adjust line to cursor position                  |
+| ctrl+alt+l        |                 Left adjust line to left margin                 |
+
+## Keybindings - xedit'ish
+
+Only active when `coboleditor.xedit_keymap` is set to true.
+
+| Keys   |       Description       |
+|--------|:-----------------------:|
+| ctrl+a | cursor to start of line |
+| ctrl+b |       cursor left       |
+| ctrl+c |     clipboard paste     |
+| ctrl+d | delete right character  |
+| ctrl+e |     cursor line end     |
+| ctrl+f |      cursor right       |
+| ctrl+h |       delete left       |
+| ctrl+j |    insert line after    |
+| ctrl+k |     delete to right     |
+| ctrl+m |   insert line before    |
+| ctrl+t |        transpose        |
+| ctrl+z |     scroll line up      |
+| alt+z  |    scroll line down     |
 
 ## Settings
 
@@ -226,20 +248,20 @@ The example below shows you how you can create a single task to compile one prog
 
 ### Task: Breakdown of problem matchers
 
-| Product and Version                           | Tools                                                            | Problem matcher(s)                                                     |
-|-----------------------------------------------|------------------------------------------------------------------|------------------------------------------------------------------------|
-| COBOL-IT                                      | *cobc*                                                           | $cobolit-cobc                                                          |
-| COBOL-IT                                      | *cobc* for errors/notes                                          | $cobolit-error-cobc + $cobolit-note-cobc                               |
-| ACUCOBOL-GT                                   | *ccbl* for errors/warnings                                       | $acucobol-ccbl + $acucobol-warning-ccbl                                |
-| Micro Focus COBOL Net Express/Server Express  | *cob* or *cobol.exe* + ERRFORMAT"2"                              | $mfcobol-errformat2-netx-sx                                            |
-|                                               | *cob* or *cobol.exe* + ERRFORMAT"2" for errors in copybooks      | +mfcobol-errformat2-copybook-netx-sx                                   |
-|                                               | *cob* or *cobol.exe* + ERRFORMAT"3"                              | $mfcobol-errformat3-netx-sx                                            |
-|                                               | *cob* or *cobol.exe* + ERRFORMAT"3" for information              | +mfcobol-errformat3-info                                               |
-| Micro Focus Visual COBOL/Enterprise Developer | *msbuild*                                                        | $mfcobol-msbuild                                                       |
-|                                               | *cob* or *cobol.exe* + ERRFORMAT"3"                              | $mfcobol-errformat3                                                    |
-|                                               | *cob* or *cobol.exe* + ERRFORMAT"3" / filename extract with PATH | $mfcobol-errformat3-basefn                                             |
-|                                               | *cob* or *cobol.exe* + ERRFORMAT"2"                              | $mfcobol-errformat2                                                    |
-|                                               | *cob* or *cobol.exe* + ERRFORMAT"2" for errors in copybooks      | $mfcobol-errformat2-copybook                                           |
+| Product and Version                           | Tools                                                            | Problem matcher(s)                       |
+|-----------------------------------------------|------------------------------------------------------------------|------------------------------------------|
+| COBOL-IT                                      | *cobc*                                                           | $cobolit-cobc                            |
+| COBOL-IT                                      | *cobc* for errors/notes                                          | $cobolit-error-cobc + $cobolit-note-cobc |
+| ACUCOBOL-GT                                   | *ccbl* for errors/warnings                                       | $acucobol-ccbl + $acucobol-warning-ccbl  |
+| Micro Focus COBOL Net Express/Server Express  | *cob* or *cobol.exe* + ERRFORMAT"2"                              | $mfcobol-errformat2-netx-sx              |
+|                                               | *cob* or *cobol.exe* + ERRFORMAT"2" for errors in copybooks      | +mfcobol-errformat2-copybook-netx-sx     |
+|                                               | *cob* or *cobol.exe* + ERRFORMAT"3"                              | $mfcobol-errformat3-netx-sx              |
+|                                               | *cob* or *cobol.exe* + ERRFORMAT"3" for information              | +mfcobol-errformat3-info                 |
+| Micro Focus Visual COBOL/Enterprise Developer | *msbuild*                                                        | $mfcobol-msbuild                         |
+|                                               | *cob* or *cobol.exe* + ERRFORMAT"3"                              | $mfcobol-errformat3                      |
+|                                               | *cob* or *cobol.exe* + ERRFORMAT"3" / filename extract with PATH | $mfcobol-errformat3-basefn               |
+|                                               | *cob* or *cobol.exe* + ERRFORMAT"2"                              | $mfcobol-errformat2                      |
+|                                               | *cob* or *cobol.exe* + ERRFORMAT"2" for errors in copybooks      | $mfcobol-errformat2-copybook             |
 
 NOTE: Problem matchers can be stacked in your task definition.   It is recommended that any "-copybook", "-info", "-note" and similar problem matcher are included before problem matchers without this suffix.
 
@@ -257,7 +279,7 @@ You may need to tweak the ```FROM``` clause in the Dockerfile and if you use a d
 
 Dockerfile:
 
-```Dockerfile
+```dockerfile
 FROM microfocus/vcdevhub:sles15_5.1_x64_login
 
 USER root

@@ -4,10 +4,10 @@ import * as path from 'path';
 import { SourceItem, SourceFolderItem } from "./sourceItem";
 import { workspace } from 'vscode';
 import { ICOBOLSettings } from './iconfiguration';
-import { getWorkspaceFolders } from './cobolfolders';
-import {  VSLogger } from './extension';
-import VSCOBOLSourceScanner from './vscobolscanner';
+import { getVSWorkspaceFolders } from './cobolfolders';
+import {  VSLogger } from './vslogger';
 import { COBOLFileUtils } from './fileutils';
+import { VSCOBOLSourceScannerTools } from './vssourcescannerutils';
 
 let sourceTreeView: SourceViewTree | undefined = undefined;
 let sourceTreeWatcher: vscode.FileSystemWatcher | undefined = undefined;
@@ -141,7 +141,7 @@ export class SourceViewTree implements vscode.TreeDataProvider<SourceItem> {
             this.topLevelItems.push(this.objectItem);
         }
 
-        const folders = getWorkspaceFolders();
+        const folders = getVSWorkspaceFolders();
         if (folders) {
             for (const folder of folders) {
                 this.addWorkspace(folder);
@@ -171,7 +171,7 @@ export class SourceViewTree implements vscode.TreeDataProvider<SourceItem> {
                     break;
 
                 case vscode.FileType.Directory: {
-                    if (!VSCOBOLSourceScanner.ignoreDirectory(entry[0])) {
+                    if (!VSCOBOLSourceScannerTools.ignoreDirectory(entry[0])) {
                         const subDir = path.join(topLevel, entry[0]);
                         this.addFolder(subDir);
                     }

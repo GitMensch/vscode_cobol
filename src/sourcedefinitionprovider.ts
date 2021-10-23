@@ -2,9 +2,9 @@ import * as vscode from 'vscode';
 import COBOLSourceScanner, { COBOLTokenStyle, COBOLToken } from './cobolsourcescanner';
 import VSCOBOLSourceScanner from './vscobolscanner';
 import { VSCOBOLConfiguration } from './vsconfiguration';
-import { cobolKeywordDictionary } from './keywords/cobolKeywords';
 import { ICOBOLSettings } from './iconfiguration';
-import { VSLogger } from './extension';
+import { VSLogger } from './vslogger';
+import { getCOBOLKeywordDictionary } from './keywords/cobolKeywords';
 
 export class COBOLSourceDefinition implements vscode.DefinitionProvider {
 
@@ -112,11 +112,7 @@ export class COBOLSourceDefinition implements vscode.DefinitionProvider {
         }
         return undefined;
     }
-
-    private isValidKeyword(keyword: string): boolean {
-        return cobolKeywordDictionary.has(keyword);
-    }
-
+    
     private getVariableInCurrentDocument(locations: vscode.Location[], document: vscode.TextDocument, position: vscode.Position, settings: ICOBOLSettings): boolean {
         const wordRange = document.getWordRangeAtPosition(position, this.variableRegEx);
         const word = wordRange ? document.getText(wordRange) : '';
@@ -125,7 +121,7 @@ export class COBOLSourceDefinition implements vscode.DefinitionProvider {
         }
 
         const tokenLower: string = word.toLowerCase();
-        if (this.isValidKeyword(tokenLower)) {
+        if (getCOBOLKeywordDictionary(document.languageId).has(tokenLower)) {
             return false;
         }
 

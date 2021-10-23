@@ -1,15 +1,15 @@
 import fs from 'fs';
 
 import ISourceHandler, { ICommentCallback } from './isourcehandler';
-import { cobolKeywordDictionary } from './keywords/cobolKeywords';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 const lineByLine = require('n-readlines');
 
-import { EmptyExternalFeature, IExternalFeatures } from './externalfeatures';
+import { EmptyExternalFeature, ESourceFormat, IExternalFeatures } from './externalfeatures';
 import { pathToFileURL } from 'url';
 import path from 'path';
 import { StringBuilder } from 'typescript-string-operations';
+import { getCOBOLKeywordDictionary } from './keywords/cobolKeywords';
 
 
 export class FileSourceHandler implements ISourceHandler {
@@ -24,6 +24,7 @@ export class FileSourceHandler implements ISourceHandler {
     updatedSource: Map<number, string>;
     shortFilename: string;
     languageId:string;
+    format: ESourceFormat;
 
     public constructor(document: string) {
         this.document = document;
@@ -35,7 +36,8 @@ export class FileSourceHandler implements ISourceHandler {
         this.isSourceInWorkspace = false;
         this.updatedSource = new Map<number, string>();
         this.languageId = "COBOL";
-        
+        this.format = ESourceFormat.unknown;
+
         const features = EmptyExternalFeature.Default;
         this.shortFilename = this.findShortWorkspaceFilename(document, features);
         const docstat = fs.statSync(document, { bigint: true });
@@ -116,6 +118,15 @@ export class FileSourceHandler implements ISourceHandler {
                 return "";
             }
 
+            // only handle debug
+            if (this.format === ESourceFormat.terminal) {
+                if (line.startsWith("\\D") || line.startsWith("|")) {
+                    this.commentCount++;
+                    this.sendCommentCallback(line, lineNumber);
+                    return "";
+                }
+            }
+
             // todo - this is a bit messy and should be revised
             if (this.dumpNumbersInAreaA) {
                 if (line.match(FileSourceHandler.paraPrefixRegex1)) {
@@ -178,7 +189,7 @@ export class FileSourceHandler implements ISourceHandler {
     }
 
     isValidKeyword(keyword: string): boolean {
-        return cobolKeywordDictionary.has(keyword);
+        return getCOBOLKeywordDictionary(this.languageId).has(keyword);
     }
 
     getFilename(): string {
@@ -239,5 +250,9 @@ export class FileSourceHandler implements ISourceHandler {
 
     getLanguageId():string {
         return this.languageId;
+    }
+
+    setSourceFormat(format: ESourceFormat):void {
+        this.format = format;
     }
 }

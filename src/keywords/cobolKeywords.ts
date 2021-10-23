@@ -516,12 +516,13 @@ export const cobolFunctions: string[] = [
 	"year-to-yyyy"
 ];
 
-export const acuKeywords: string[] = [
+const acuKeywords: string[] = [
 	"3-d",
 	"active-x-control",
 	"activex-res",
 	"acuactivexcontrol",
 	"alignment",
+	"assembly-name",
 	"auto-minimize",
 	"auto-resize",
 	"bind",
@@ -531,10 +532,18 @@ export const acuKeywords: string[] = [
 	"cells",
 	"center",
 	"centered-headings",
+	"century-date",
+	"century-day",
+	"chart",
+	"cline",
+	"clines",
 	"clsid",
 	"color",
 	"column-headings",
+	"compression",
+	"csize",
 	"cursor-frame-width",
+	"cycle",
 	"data-columns",
 	"default-font",
 	"default-interface",
@@ -543,34 +552,58 @@ export const acuKeywords: string[] = [
 	"display-columns",
 	"divider-color",
 	"drag-color",
+	"end-modify",
+	"end-move",
+	"end-use",
+	"end-wait",
 	"engraved",
+	"entry-field",
 	"erase",
 	"event",
+	"file-path",
+	"file-prefix",
 	"frame",
 	"grid",
 	"heading-color",
 	"heading-divider-color",
 	"height",
 	"help-id",
+	"icon",
 	"id",
+	"identified",
+	"independent",
 	"initial-state",
 	"inquire",
 	"label-offset",
 	"label",
 	"large-font",
+	"layout-data",
+	"link",
 	"list-box",
+	"lower",
+	"manual",
+	"mass-update",
 	"menu",
 	"message",
+	"modal",
 	"modeless",
 	"modify",
 	"newline",
 	"no-tab",
 	"num-rows",
+	"numeric-fill",
+	"only",
+	"overlapped",
+	"page-layout-screen",
+	"paragraph",
+	"pixel",
+	"pixels",
+	"pop-up",
+	"previous",
 	"primary-interface",
+	"priority",
 	"push-button",
 	"radio-button",
-	"page-layout-screen",
-	"entry-field",
 	"record-data",
 	"record-position",
 	"report-composer",
@@ -579,15 +612,22 @@ export const acuKeywords: string[] = [
 	"scroll",
 	"self-act",
 	"separation",
+	"strong-name",
+	"style",
 	"system",
 	"thread",
+	"threads",
 	"tiled-headings",
 	"title-bar",
 	"title",
+	"tool-bar",
+	"transaction-status",
 	"unsorted",
+	"upper",
 	"user-gray",
 	"vpadding",
 	"vscroll",
+	"wide",
 	"width",
 	"wrap"
 ];
@@ -1018,28 +1058,61 @@ export const cobolCBLApis: string[] = [
 	"CBL_YIELD_RUN_UNIT"
 ];
 
-export const cobolKeywordDictionary = new Map<string, string>();
+const cobolKeywordDictionaryMap = new Map<string, string>();
+const acucobolKeywordDictionaryMap = new Map<string, string>();
 export const cobolProcedureKeywordDictionary = new Map<string, string>();
 export const cobolStorageKeywordDictionary = new Map<string, string>();
 export const cobolRegistersDictionary = new Map<string, string>();
 
+const cobolList: string[] = [];
+const acucobolList: string[] = [];
+
 /* inline decl */
 for (const key of cobolKeywords) {
-	cobolKeywordDictionary.set(key, key);
+	cobolKeywordDictionaryMap.set(key, key);
+	acucobolKeywordDictionaryMap.set(key, key);
+	cobolList.push(key);
+	acucobolList.push(key);
 }
 
 for (const key of acuKeywords) {
-	cobolKeywordDictionary.set(key, key);
+	if (!acucobolKeywordDictionaryMap.has(key)) {
+		acucobolKeywordDictionaryMap.set(key, key);
+		acucobolList.push(key);
+	}
 }
 
 for (const key of cobolProcedureKeywords) {
-	cobolProcedureKeywordDictionary.set(key, key);
+	if (!cobolProcedureKeywordDictionary.has(key)) {
+		cobolProcedureKeywordDictionary.set(key, key);
+		cobolList.push(key);
+		acucobolList.push(key);
+	}
 }
 
 for (const key of cobolStorageKeywords) {
-	cobolStorageKeywordDictionary.set(key, key);
+	if (!cobolStorageKeywordDictionary.has(key)) {
+		cobolStorageKeywordDictionary.set(key, key);
+		cobolList.push(key);
+		acucobolList.push(key);
+	}
 }
 
 for (const key of cobolRegisters) {
-	cobolRegistersDictionary.set(key, key);
+	if (!cobolRegistersDictionary.has(key)) {
+		cobolRegistersDictionary.set(key, key);
+		cobolList.push(key);
+		acucobolList.push(key);
+	}
+}
+
+export function getCOBOLKeywordDictionary(dialect: string): Map<string, string> {
+	if (dialect === 'ACUCOBOL') {
+		return acucobolKeywordDictionaryMap;
+	}
+	return cobolKeywordDictionaryMap;
+}
+
+export function getCOBOLKeywordList(dialect: string): string[] {
+	return dialect === 'ACUCOBOL' ? acucobolList : cobolList;
 }

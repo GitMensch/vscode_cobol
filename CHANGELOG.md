@@ -3,7 +3,217 @@
 Changelog for spgennardvscode_cobol.
 
 
-## Unreleased 
+## 7.10.21 
+ 
+**missed one**
+* [371ed1ab9fe2cd7](https://github.com/spgennard/vscode_cobol/commit/371ed1ab9fe2cd7) *2021-10-22 07:09:31*
+ 
+**Update CHANGELOG.md**
+* [826c7e9a9b86c13](https://github.com/spgennard/vscode_cobol/commit/826c7e9a9b86c13) *2021-10-22 07:02:29*
+ 
+**update**
+* [5f4c5af53573563](https://github.com/spgennard/vscode_cobol/commit/5f4c5af53573563) *2021-10-21 23:00:31*
+ 
+**Update CHANGELOG.md**
+* [01ea9bac1681954](https://github.com/spgennard/vscode_cobol/commit/01ea9bac1681954) *2021-10-21 22:59:21*
+ 
+ 
+## 7.10.20 
+ 
+**add some experimental support for web extension**
+* [dae3eb2f1812760](https://github.com/spgennard/vscode_cobol/commit/dae3eb2f1812760) *2021-10-21 22:58:32*
+ 
+**Update CHANGELOG.md**
+* [b3627016f4d8a06](https://github.com/spgennard/vscode_cobol/commit/b3627016f4d8a06) *2021-10-20 20:20:57*
+ 
+ 
+## 7.10.19 
+ 
+**disable "editor.bracketPairColorization.enabled" as it causes odd**
+* [31b7012237587e1](https://github.com/spgennard/vscode_cobol/commit/31b7012237587e1) *2021-10-20 16:28:06*
+ 
+**tidy up**
+* [182d5c6ee794a0e](https://github.com/spgennard/vscode_cobol/commit/182d5c6ee794a0e) *2021-10-19 20:30:39*
+ 
+**Update CHANGELOG.md**
+* [5b16841a1ed2e3f](https://github.com/spgennard/vscode_cobol/commit/5b16841a1ed2e3f) *2021-10-18 23:12:03*
+ 
+ 
+## 7.10.17 
+ 
+**enable editor.bracketPairColorization.enabled on a per language basis**
+* [20d16c21654af43](https://github.com/spgennard/vscode_cobol/commit/20d16c21654af43) *2021-10-18 18:40:54*
+ 
+**Update CHANGELOG.md**
+* [a8cd2a25970ac14](https://github.com/spgennard/vscode_cobol/commit/a8cd2a25970ac14) *2021-10-17 11:16:22*
+ 
+ 
+## 7.10.16 
+ 
+**Fix bracket issue with ref mod items**
+* [9204f81a11482f5](https://github.com/spgennard/vscode_cobol/commit/9204f81a11482f5) *2021-10-17 11:14:50*
+ 
+**Update CHANGELOG.md**
+* [19af0a8ef802f67](https://github.com/spgennard/vscode_cobol/commit/19af0a8ef802f67) *2021-10-15 20:52:51*
+ 
+ 
+## 7.10.15 
+ 
+**add some docs for xedit'ish keys**
+* [4d047a72d7e5d6c](https://github.com/spgennard/vscode_cobol/commit/4d047a72d7e5d6c) *2021-10-15 19:25:17*
+ 
+**update**
+* [e140f504d4a2599](https://github.com/spgennard/vscode_cobol/commit/e140f504d4a2599) *2021-10-14 21:27:25*
+ 
+**Update CHANGELOG.md**
+* [2bb4fc63e4c5939](https://github.com/spgennard/vscode_cobol/commit/2bb4fc63e4c5939) *2021-10-14 21:22:33*
+ 
+ 
+## 7.10.14 
+ 
+**add transpose**
+* [755e5c5458ba524](https://github.com/spgennard/vscode_cobol/commit/755e5c5458ba524) *2021-10-14 21:21:51*
+ 
+**fix bug in "'perform" isense**
+* [d434d01a887756f](https://github.com/spgennard/vscode_cobol/commit/d434d01a887756f) *2021-10-14 20:06:57*
+ 
+**Update CHANGELOG.md**
+* [44aab1b31d4b87f](https://github.com/spgennard/vscode_cobol/commit/44aab1b31d4b87f) *2021-10-13 21:51:16*
+ 
+ 
+## 7.10.13 
+ 
+**add some simple keymaps for xedit enabled via config**
+* [57fbaea64bfb5c9](https://github.com/spgennard/vscode_cobol/commit/57fbaea64bfb5c9) *2021-10-13 21:50:27*
+ 
+**editor.renderIndentGuides has been removed in 1.61**
+* [2bec11212767673](https://github.com/spgennard/vscode_cobol/commit/2bec11212767673) *2021-10-13 20:42:15*
+ 
+**update**
+* [620a3d1f87c2b4a](https://github.com/spgennard/vscode_cobol/commit/620a3d1f87c2b4a) *2021-10-12 22:53:40*
+ 
+**Update CHANGELOG.md**
+* [ec521d7a346cef3](https://github.com/spgennard/vscode_cobol/commit/ec521d7a346cef3) *2021-10-12 22:52:28*
+ 
+ 
+## 7.10.11 
+ 
+**fix alignment in README.md table**
+* [876a46d7dc3d648](https://github.com/spgennard/vscode_cobol/commit/876a46d7dc3d648) *2021-10-09 21:21:08*
+ 
+**Update CHANGELOG.md**
+* [a1732c2cf6f97fe](https://github.com/spgennard/vscode_cobol/commit/a1732c2cf6f97fe) *2021-10-09 20:55:51*
+ 
+ 
+## 7.10.9 
+ 
+**tweak**
+* [0f88e5904fabc1e](https://github.com/spgennard/vscode_cobol/commit/0f88e5904fabc1e) *2021-10-09 20:55:32*
+ 
+**Update CHANGELOG.md**
+* [c862416b82691a5](https://github.com/spgennard/vscode_cobol/commit/c862416b82691a5) *2021-10-09 20:54:59*
+ 
+**change adjust cursor to ctrl+alt+a and add adjust left margin ctrl+alt+l**
+* [62e8bbdfd5a15de](https://github.com/spgennard/vscode_cobol/commit/62e8bbdfd5a15de) *2021-10-09 20:53:19*
+ 
+**update**
+* [e4c122b8cbd79fc](https://github.com/spgennard/vscode_cobol/commit/e4c122b8cbd79fc) *2021-10-09 19:41:07*
+ 
+**Update CHANGELOG.md**
+* [81b8ac8d8fdbafc](https://github.com/spgennard/vscode_cobol/commit/81b8ac8d8fdbafc) *2021-10-09 19:38:03*
+ 
+ 
+## 7.10.8 
+ 
+**Release 'indent' to cursor - ctrl+alt+i**
+* [48bfcb89c9e1f55](https://github.com/spgennard/vscode_cobol/commit/48bfcb89c9e1f55) *2021-10-09 19:37:25*
+ 
+**Update CHANGELOG.md**
+* [98a2276ea56cc6f](https://github.com/spgennard/vscode_cobol/commit/98a2276ea56cc6f) *2021-10-07 22:39:32*
+ 
+ 
+## 7.10.4 
+ 
+**add BITLANG-COBOL id**
+* [1b9b5eced05255a](https://github.com/spgennard/vscode_cobol/commit/1b9b5eced05255a) *2021-10-07 22:39:04*
+ 
+**Update CHANGELOG.md**
+* [241dfcd83a8fe65](https://github.com/spgennard/vscode_cobol/commit/241dfcd83a8fe65) *2021-10-07 09:57:39*
+ 
+ 
+## 7.10.2 
+ 
+**remove reference to switcher**
+* [01a85483b22074b](https://github.com/spgennard/vscode_cobol/commit/01a85483b22074b) *2021-10-07 09:57:12*
+ 
+**Update CHANGELOG.md**
+* [f438f4daf333c0f](https://github.com/spgennard/vscode_cobol/commit/f438f4daf333c0f) *2021-10-02 21:15:17*
+ 
+ 
+## 7.10.1 
+ 
+**update**
+* [5125b8fa222b655](https://github.com/spgennard/vscode_cobol/commit/5125b8fa222b655) *2021-10-02 21:14:40*
+ 
+**Update CHANGELOG.md**
+* [e6f8a57e6fc2d2f](https://github.com/spgennard/vscode_cobol/commit/e6f8a57e6fc2d2f) *2021-10-02 21:03:42*
+ 
+**new month**
+* [89ceb8d18b61e2e](https://github.com/spgennard/vscode_cobol/commit/89ceb8d18b61e2e) *2021-10-02 21:03:06*
+ 
+**Update CHANGELOG.md**
+* [a2b7db6f73c2149](https://github.com/spgennard/vscode_cobol/commit/a2b7db6f73c2149) *2021-09-28 20:29:18*
+ 
+ 
+## 7.9.27 
+ 
+**remove possible security issue with npm package (nth-check)**
+* [795ca4d00c8e5db](https://github.com/spgennard/vscode_cobol/commit/795ca4d00c8e5db) *2021-09-28 20:24:15*
+ 
+**Update CHANGELOG.md**
+* [c0be380abb14d53](https://github.com/spgennard/vscode_cobol/commit/c0be380abb14d53) *2021-09-22 21:16:22*
+ 
+ 
+## 7.9.21 
+ 
+**tweak acu syntax**
+* [2959a573b3a9c61](https://github.com/spgennard/vscode_cobol/commit/2959a573b3a9c61) *2021-09-22 21:15:55*
+ 
+**Update CHANGELOG.md**
+* [ba57b34b69e4dbc](https://github.com/spgennard/vscode_cobol/commit/ba57b34b69e4dbc) *2021-09-20 23:03:46*
+ 
+ 
+## 7.9.20 
+ 
+**tidy up/fix bug**
+* [78dd575074ce866](https://github.com/spgennard/vscode_cobol/commit/78dd575074ce866) *2021-09-20 23:03:05*
+ 
+**Update CHANGELOG.md**
+* [084ff05a99c326a](https://github.com/spgennard/vscode_cobol/commit/084ff05a99c326a) *2021-09-19 21:01:47*
+ 
+ 
+## 7.9.19 
+ 
+**update acucobol keywords**
+* [3d8631e6d7ae39e](https://github.com/spgennard/vscode_cobol/commit/3d8631e6d7ae39e) *2021-09-19 21:00:35*
+ 
+**just-incase code to ensure we don't get duplicates in the lists**
+* [ee734a085f90e22](https://github.com/spgennard/vscode_cobol/commit/ee734a085f90e22) *2021-09-19 07:37:12*
+ 
+**update syntax**
+* [3aa8f797a9568b0](https://github.com/spgennard/vscode_cobol/commit/3aa8f797a9568b0) *2021-09-18 22:20:14*
+ 
+**Update CHANGELOG.md**
+* [8e0ce2639f55c07](https://github.com/spgennard/vscode_cobol/commit/8e0ce2639f55c07) *2021-09-18 18:48:26*
+ 
+ 
+## 7.9.18 
+ 
+**start to make keywords language dialect aware**
+* [e5b4dc430af0b1a](https://github.com/spgennard/vscode_cobol/commit/e5b4dc430af0b1a) *2021-09-18 18:47:29*
+ 
+**simplify changelog**
+* [5a9f036b8c3c9b3](https://github.com/spgennard/vscode_cobol/commit/5a9f036b8c3c9b3) *2021-09-17 20:58:24*
  
 **Update CHANGELOG.md**
 * [b8e10bfd3d8d73a](https://github.com/spgennard/vscode_cobol/commit/b8e10bfd3d8d73a) *2021-09-17 20:42:14*

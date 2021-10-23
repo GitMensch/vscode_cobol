@@ -1,14 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-import { VSExtensionUtils, VSLogger } from "./extension";
+import { FileType, Uri, workspace } from "vscode";
+import { VSLogger } from "./vslogger";
 import { ESourceFormat, IExternalFeatures } from "./externalfeatures";
 import { ICOBOLSettings } from "./iconfiguration";
 import ISourceHandler from "./isourcehandler";
 import { COBOLCopyBookProvider } from "./opencopybook";
-import { getCOBOLSourceFormat } from "./sourceformat";
+import { getVSCOBOLSourceFormat } from "./sourceformat";
+import { VSExtensionUtils } from "./extension";
 import { VSCOBOLFileUtils } from "./vsfileutils";
 
-export class VSExternalFeatures implements IExternalFeatures{
+export class VSExternalFeatures implements IExternalFeatures {
     public logMessage(message: string): void {
         VSLogger.logMessage(message);
     }
@@ -31,7 +33,7 @@ export class VSExternalFeatures implements IExternalFeatures{
     }
 
     public getCOBOLSourceFormat(doc: ISourceHandler, config: ICOBOLSettings): ESourceFormat {
-        return getCOBOLSourceFormat(doc,config);
+        return getVSCOBOLSourceFormat(doc, config);
     }
 
     public getFullWorkspaceFilename(sdir: string, sdirMs: BigInt): string | undefined {
@@ -45,5 +47,18 @@ export class VSExternalFeatures implements IExternalFeatures{
 
     public getWorkspaceFolders(): string[] {
         return [];
+    }
+
+    public isDirectory(possibleDirectory: string): boolean {
+        try {
+            async () => {
+                const stat = await workspace.fs.stat(Uri.file(possibleDirectory));
+                return stat.type === FileType.Directory;
+            }
+        } catch {
+            return false;
+        }
+
+        return false;
     }
 }

@@ -4,9 +4,9 @@ import { DecorationOptions, Range, TextEditor, Position, window, ThemeColor, Tex
 import { VSCOBOLConfiguration } from './vsconfiguration';
 import { ESourceFormat } from './externalfeatures';
 import VSCOBOLSourceScanner from './vscobolscanner';
-import { getWorkspaceFolders } from './cobolfolders';
+import { getVSWorkspaceFolders } from './cobolfolders';
 import { VSCodeSourceHandler } from './vscodesourcehandler';
-import { getCOBOLSourceFormat } from './sourceformat';
+import { getVSCOBOLSourceFormat } from './sourceformat';
 
 const trailingSpacesDecoration: TextEditorDecorationType = window.createTextEditorDecorationType({
     light: {
@@ -27,7 +27,7 @@ const trailingSpacesDecoration: TextEditorDecorationType = window.createTextEdit
 });
 
 function isEnabledViaWorkspace4jcl(): boolean {
-    if (getWorkspaceFolders() === undefined) {
+    if (getVSWorkspaceFolders() === undefined) {
         return false;
     }
 
@@ -89,7 +89,7 @@ export default async function updateDecorations(activeTextEditor: TextEditor | u
             let sf: ESourceFormat = ESourceFormat.unknown;
             if (gcp === undefined) {
                 const vsfile = new VSCodeSourceHandler(doc, false);
-                sf = getCOBOLSourceFormat(vsfile, configHandler);
+                sf = getVSCOBOLSourceFormat(vsfile, configHandler);
             } else {
                 sf = gcp.sourceFormat;
             }

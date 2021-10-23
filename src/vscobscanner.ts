@@ -2,10 +2,11 @@
 import path from "path";
 
 import { extensions, Uri, WorkspaceFolder } from "vscode";
-import { getWorkspaceFolders } from "./cobolfolders";
+import { getVSWorkspaceFolders } from "./cobolfolders";
 import { COBSCANNER_ADDFILE, COBSCANNER_KNOWNCOPYBOOK, COBSCANNER_SENDCLASS, COBSCANNER_SENDENUM, COBSCANNER_SENDEP, COBSCANNER_SENDINTERFACE, COBSCANNER_SENDPRGID, COBSCANNER_STATUS, ScanData, ScanDataHelper } from "./cobscannerdata";
 import { VSCOBOLConfiguration } from './vsconfiguration';
-import { progressStatusBarItem, VSLogger } from "./extension";
+import { progressStatusBarItem } from "./extension";
+import { VSLogger } from "./vslogger";
 import { ICOBOLSettings } from "./iconfiguration";
 import { fork, ForkOptions } from 'child_process';
 import { COBOLWorkspaceSymbolCacheHelper, TypeCategory } from "./cobolworkspacecache";
@@ -215,7 +216,7 @@ export class VSCobScanner {
         const msgViaCommand = "(" + (viaCommand ? "on demand" : "startup") + ")";
         const settings = VSCOBOLConfiguration.get();
       
-        const ws = getWorkspaceFolders();
+        const ws = getVSWorkspaceFolders();
         const stats = new FileScanStats();
         const files: string[] = [];
 
