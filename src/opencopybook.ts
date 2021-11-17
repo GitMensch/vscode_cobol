@@ -1,18 +1,26 @@
-'use strict';
+"use strict";
 
-import * as path from 'path';
+import * as path from "path";
 
-import * as vscode from 'vscode';
-import { Range, TextDocument, Definition, Position, CancellationToken, Uri } from 'vscode';
-import { VSCOBOLConfiguration } from './vsconfiguration';
-import { ICOBOLSettings } from './iconfiguration';
-import VSCOBOLSourceScanner from './vscobolscanner';
-import COBOLSourceScanner from './cobolsourcescanner';
-import { VSCOBOLFileUtils } from './vsfileutils';
+import * as vscode from "vscode";
+import { Range, TextDocument, Definition, Position, CancellationToken, Uri } from "vscode";
+import { VSCOBOLConfiguration } from "./vsconfiguration";
+import { ICOBOLSettings } from "./iconfiguration";
+import { VSCOBOLSourceScanner } from "./vscobolscanner";
+import { COBOLSourceScanner } from "./cobolsourcescanner";
+import { VSCOBOLFileUtils } from "./vsfileutils";
+import { IExternalFeatures } from "./externalfeatures";
 
 
 
 export class COBOLCopyBookProvider implements vscode.DefinitionProvider {
+
+    private features: IExternalFeatures;
+
+    constructor(features: IExternalFeatures) {
+        this.features = features;
+    }
+
     public provideDefinition(document: vscode.TextDocument,
         position: vscode.Position,
         token: vscode.CancellationToken): vscode.ProviderResult<vscode.Definition> {
@@ -100,7 +108,7 @@ export class COBOLCopyBookProvider implements vscode.DefinitionProvider {
         }
 
         if (filename !== null && filename.length !== 0) {
-            const fullPath = COBOLCopyBookProvider.expandLogicalCopyBookToFilenameOrEmpty(filename.trim(), inDirectory, config);
+            const fullPath = COBOLCopyBookProvider.expandLogicalCopyBookOrEmpty(filename.trim(), inDirectory, config, this.features);
             if (fullPath.length !== 0) {
                 return new vscode.Location(
                     Uri.file(fullPath),
@@ -113,10 +121,10 @@ export class COBOLCopyBookProvider implements vscode.DefinitionProvider {
 
     }
 
-    public static expandLogicalCopyBookToFilenameOrEmpty(filename: string, inDirectory: string, config: ICOBOLSettings): string {
+    public static expandLogicalCopyBookOrEmpty(filename: string, inDirectory: string, config: ICOBOLSettings, features: IExternalFeatures): string {
 
         if (inDirectory === null || inDirectory.length === 0) {
-            const fullPath = VSCOBOLFileUtils.findCopyBook(filename, config);
+            const fullPath = VSCOBOLFileUtils.findCopyBook(filename, config, features);
             if (fullPath.length !== 0) {
                 return path.normalize(fullPath);
             }
@@ -124,7 +132,7 @@ export class COBOLCopyBookProvider implements vscode.DefinitionProvider {
             return fullPath;
         }
 
-        const fullPath = VSCOBOLFileUtils.findCopyBookInDirectory(filename, inDirectory, config);
+        const fullPath = VSCOBOLFileUtils.findCopyBookInDirectory(filename, inDirectory, config, features);
         if (fullPath.length !== 0) {
             return path.normalize(fullPath);
         }
@@ -149,14 +157,14 @@ export class COBOLCopyBookProvider implements vscode.DefinitionProvider {
             }
 
             // remove double quote
-            if (justCopyArg.startsWith('"') && justCopyArg.endsWith('"')) {
+            if (justCopyArg.startsWith("\"") && justCopyArg.endsWith("\"")) {
                 justCopyArg = justCopyArg.substr(1, justCopyArg.length - 2);
                 justCopyArg = justCopyArg.trim();
                 return justCopyArg;
             }
 
             // remove single quote
-            if (justCopyArg.startsWith('\'') && justCopyArg.endsWith('\'')) {
+            if (justCopyArg.startsWith("'") && justCopyArg.endsWith("'")) {
                 justCopyArg = justCopyArg.substr(1, justCopyArg.length - 2);
                 justCopyArg = justCopyArg.trim();
             }

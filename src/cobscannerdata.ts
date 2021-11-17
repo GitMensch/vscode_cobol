@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import path from "path";
 import fs from "fs";
 
 export class ScanData {
@@ -11,8 +10,7 @@ export class ScanData {
     public maxDirectoryDepth = 0;
     public fileCount = 0;
     public parse_copybooks_for_references = false;
-    public cache_metadata_show_progress_messages = false;
-    public cacheDirectory = "";
+    public cache_metadata_verbose_messages = false;
     public Files: string[] = [];
     public showStats = true;
     public md_symbols: string[] = [];
@@ -38,9 +36,9 @@ export class ScanStats {
     showMessage = false;
 }
 
-export const COBSCANNER_STATUS = '@@STATUS';
-export const COBSCANNER_SENDPRGID = '@@SEND.PRGID';
-export const COBSCANNER_SENDEP = '@@SEND.EP';
+export const COBSCANNER_STATUS = "@@STATUS";
+export const COBSCANNER_SENDPRGID = "@@SEND.PRGID";
+export const COBSCANNER_SENDEP = "@@SEND.EP";
 export const COBSCANNER_SENDINTERFACE = "@@SEND.INTID";
 export const COBSCANNER_SENDENUM = "@@SEND.ENUMID";
 export const COBSCANNER_SENDCLASS = "@@SEND.CLASSID";
@@ -49,7 +47,7 @@ export const COBSCANNER_KNOWNCOPYBOOK = "@@SEND.KNOWNCOPYBOOK";
 
 function replacer(this: any, key: any, value: any): any {
 
-    if (typeof value === 'bigint') {
+    if (typeof value === "bigint") {
         return value.toString();
     }
 
@@ -57,22 +55,13 @@ function replacer(this: any, key: any, value: any): any {
 }
 
 function reviver(key: any, value: any): any {
-    if (typeof value === 'bigint' && value !== null) {
+    if (typeof value === "bigint" && value !== null) {
         return BigInt(value);
     }
     
     return value;
 }
 export class ScanDataHelper {
-    public static readonly scanFilename = "cobscanner.json";
-
-    public static save(cacheDirectory: string, st: ScanData): string {
-        const fn = path.join(cacheDirectory,ScanDataHelper.scanFilename);
-
-        fs.writeFileSync(fn, JSON.stringify(st,replacer));
-
-        return fn;
-    }
 
     public static load(fn: string) : ScanData {
         // const fn = path.join(cacheDirectory, ScanDataHelper.scanFilename);

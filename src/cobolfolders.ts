@@ -1,5 +1,5 @@
 import { workspace, WorkspaceFolder } from "vscode";
-import { VSCOBOLConfiguration } from './vsconfiguration';
+import { VSCOBOLConfiguration } from "./vsconfiguration";
 
 export function getVSWorkspaceFolders(): ReadonlyArray<WorkspaceFolder> | undefined {
     const ws = workspace.workspaceFolders;
@@ -12,7 +12,7 @@ export function getVSWorkspaceFolders(): ReadonlyArray<WorkspaceFolder> | undefi
     // make a map of the folders
     const folderMap: Map<string, WorkspaceFolder> = new Map<string, WorkspaceFolder>();
     for (const folder of ws) {
-        if (folder.uri.scheme === 'file') {             // filter out another other than file related
+        if (folder.uri.scheme === "file") {             // filter out another other than file related
             folderMap.set(folder.name, folder);
         }
     }
@@ -29,7 +29,7 @@ export function getVSWorkspaceFolders(): ReadonlyArray<WorkspaceFolder> | undefi
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    for (const [k, v] of folderMap) {
+    for (const [, v] of folderMap) {
         rwFolder.push(v);
     }
 

@@ -1,19 +1,21 @@
-import { CompletionItemProvider, TextDocument, Position, CancellationToken, CompletionItem, CompletionContext, ProviderResult, CompletionList, CompletionItemKind, Range } from 'vscode';
-import VSCOBOLSourceScanner from './vscobolscanner';
-import { ICOBOLSettings } from './iconfiguration';
-import COBOLSourceScanner, { COBOLToken, camelize } from './cobolsourcescanner';
-import { VSCOBOLConfiguration } from './vsconfiguration';
-import TrieSearch from 'trie-search';
-import { VSLogger } from './vslogger';
-import { InMemoryGlobalSymbolCache } from './globalcachehelper';
-import { VSExtensionUtils } from './extension';
+import { CompletionItemProvider, TextDocument, Position, CancellationToken, CompletionItem, CompletionContext, ProviderResult, CompletionList, CompletionItemKind, Range } from "vscode";
+import { VSCOBOLSourceScanner } from "./vscobolscanner";
+import { ICOBOLSettings } from "./iconfiguration";
+import { COBOLSourceScanner, COBOLToken, camelize } from "./cobolsourcescanner";
+import { VSCOBOLConfiguration } from "./vsconfiguration";
+import TrieSearch from "trie-search";
+import { VSLogger } from "./vslogger";
+import { InMemoryGlobalSymbolCache } from "./globalcachehelper";
+import { IExternalFeatures } from "./externalfeatures";
 
 export class CobolSourceCompletionItemProvider implements CompletionItemProvider {
 
     private iconfig: ICOBOLSettings;
+    private features: IExternalFeatures;
 
-    public constructor(config: ICOBOLSettings) {
+    public constructor(config: ICOBOLSettings, features: IExternalFeatures) {
         this.iconfig = config;
+        this.features = features;
     }
 
 
@@ -26,13 +28,13 @@ export class CobolSourceCompletionItemProvider implements CompletionItemProvider
                 const words = sf.cache4PerformTargets;
 
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                for (const [key, token] of sf.sections) {
+                for (const [, token] of sf.sections) {
                     if (token.inProcedureDivision) {
                         words.add(token);
                     }
                 }
                 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                for (const [key, token] of sf.paragraphs) {
+                for (const [, token] of sf.paragraphs) {
                     if (token.inProcedureDivision) {
                         words.add(token);
                     }
@@ -44,7 +46,7 @@ export class CobolSourceCompletionItemProvider implements CompletionItemProvider
             }
         }
 
-        return new TrieSearch('tokenName');
+        return new TrieSearch("tokenName");
     }
 
     private getALlPerformTargets(document: TextDocument, settings: ICOBOLSettings): CompletionItem[] {
@@ -53,13 +55,13 @@ export class CobolSourceCompletionItemProvider implements CompletionItemProvider
 
         if (sf !== undefined) {
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            for (const [key, token] of sf.sections) {
+            for (const [, token] of sf.sections) {
                 if (token.inProcedureDivision) {
                     items.push(new CompletionItem(token.tokenName, CompletionItemKind.Method));
                 }
             }
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            for (const [key, token] of sf.paragraphs) {
+            for (const [, token] of sf.paragraphs) {
                 if (token.inProcedureDivision) {
                     items.push(new CompletionItem(token.tokenName, CompletionItemKind.Method));
                 }
@@ -74,7 +76,7 @@ export class CobolSourceCompletionItemProvider implements CompletionItemProvider
 
         if (sf !== undefined) {
             if (sf.cache4ConstantsOrVars === undefined) {
-                sf.cache4PerformTargets = new TrieSearch('tokenName');
+                sf.cache4PerformTargets = new TrieSearch("tokenName");
                 const words: TrieSearch = sf.cache4PerformTargets;
 
                 for (const key of sf.constantsOrVariables.keys()) {
@@ -94,7 +96,7 @@ export class CobolSourceCompletionItemProvider implements CompletionItemProvider
             }
         }
 
-        return new TrieSearch('tokenName');
+        return new TrieSearch("tokenName");
     }
 
 
@@ -241,8 +243,8 @@ export class CobolSourceCompletionItemProvider implements CompletionItemProvider
             return new CompletionList(items, false);
         }
 
-        const startTime = VSExtensionUtils.performance_now();
-        let wordToComplete = '';
+        const startTime = this.features.performance_now();
+        let wordToComplete = "";
         let wordBefore = "";
         let wordBeforeLower = "";
         let currentLine: string = document.lineAt(position.line).text.trimStart();
@@ -404,7 +406,7 @@ export class CobolSourceCompletionItemProvider implements CompletionItemProvider
             }
         }
 
-        const totalTimeInMS = VSExtensionUtils.performance_now() - startTime;
+        const totalTimeInMS = this.features.performance_now() - startTime;
         const timeTaken = totalTimeInMS.toFixed(2);
         if (totalTimeInMS > VSLogger.logTimeThreshold) {
             VSLogger.logMessage(" - CobolSourceCompletionItemProvider took " + timeTaken + " ms");

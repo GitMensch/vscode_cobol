@@ -1,28 +1,22 @@
 import { InMemoryGlobalCacheHelper } from "./globalcachehelper";
 import { COBOLToken, COBOLTokenStyle, ICOBOLSourceScanner, ICOBOLSourceScannerEventer, ICOBOLSourceScannerEvents } from "./cobolsourcescanner";
-import { ICOBOLSettings } from './iconfiguration';
-import { COBOLSymbol, COBOLSymbolTable } from './cobolglobalcache';
-import { COBOLSymbolTableHelper } from './cobolglobalcache_file';
-import { CacheDirectoryStrategy } from "./externalfeatures";
+import { ICOBOLSettings } from "./iconfiguration";
+import { COBOLSymbol, COBOLSymbolTable } from "./cobolglobalcache";
 import { COBOLWorkspaceSymbolCacheHelper } from "./cobolworkspacecache";
 import { COBSCANNER_ADDFILE, COBSCANNER_KNOWNCOPYBOOK, COBSCANNER_SENDCLASS, COBSCANNER_SENDENUM, COBSCANNER_SENDEP, COBSCANNER_SENDINTERFACE, COBSCANNER_SENDPRGID } from "./cobscannerdata";
 
 
 export class COBOLSymbolTableEventHelper implements ICOBOLSourceScannerEvents {
-    private qp: ICOBOLSourceScanner | undefined;
     private st: COBOLSymbolTable | undefined;
     private parse_copybooks_for_references: boolean;
-    private config: ICOBOLSettings;
     private sender: ICOBOLSourceScannerEventer;
 
     public constructor(config: ICOBOLSettings, sender: ICOBOLSourceScannerEventer) {
         this.sender = sender;
-        this.config = config;
         this.parse_copybooks_for_references = config.parse_copybooks_for_references;
     }
 
     public start(qp: ICOBOLSourceScanner): void {
-        this.qp = qp;
         this.st = new COBOLSymbolTable();
         this.st.fileName = qp.filename;
         this.st.lastModifiedTime = qp.lastModifiedTime;
@@ -123,11 +117,6 @@ export class COBOLSymbolTableEventHelper implements ICOBOLSourceScannerEvents {
     }
 
     public finish(): void {
-        if (this.st !== undefined && this.qp !== undefined) {
-            if (this.config.cache_metadata !== CacheDirectoryStrategy.Off &&
-                this.parse_copybooks_for_references === false) {
-                COBOLSymbolTableHelper.saveToFile(this.qp.deprecatedCacheDirectory, this.st);
-            }
-        }
+        //
     }
 }

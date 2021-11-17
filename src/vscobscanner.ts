@@ -4,11 +4,11 @@ import path from "path";
 import { extensions, Uri, WorkspaceFolder } from "vscode";
 import { getVSWorkspaceFolders } from "./cobolfolders";
 import { COBSCANNER_ADDFILE, COBSCANNER_KNOWNCOPYBOOK, COBSCANNER_SENDCLASS, COBSCANNER_SENDENUM, COBSCANNER_SENDEP, COBSCANNER_SENDINTERFACE, COBSCANNER_SENDPRGID, COBSCANNER_STATUS, ScanData, ScanDataHelper } from "./cobscannerdata";
-import { VSCOBOLConfiguration } from './vsconfiguration';
+import { VSCOBOLConfiguration } from "./vsconfiguration";
 import { progressStatusBarItem } from "./extension";
 import { VSLogger } from "./vslogger";
 import { ICOBOLSettings } from "./iconfiguration";
-import { fork, ForkOptions } from 'child_process';
+import { fork, ForkOptions } from "child_process";
 import { COBOLWorkspaceSymbolCacheHelper, TypeCategory } from "./cobolworkspacecache";
 import { COBOLUtils } from "./cobolutils";
 
@@ -67,17 +67,17 @@ export class VSCobScanner {
             }
         }, settings.cache_metadata_inactivity_timeout);
 
-        child.on('error', err => {
+        child.on("error", err => {
             VSLogger.logException(`Fork caused ${reason}`, err);
         });
 
-        child.on('exit', code => {
+        child.on("exit", code => {
             clearTimeout(timer);
 
             if (code !== 0) {
-                // if (sf.cache_metadata_show_progress_messages) {
-                VSLogger.logMessage(`External scan completed (${child.pid}) [Exit Code=${code}}]`);
-                // }
+                if (sf.cache_metadata_verbose_messages) {
+                    VSLogger.logMessage(`External scan completed (${child.pid}) [Exit Code=${code}}]`);
+                }
             } else {
                 progressStatusBarItem.hide();
             }
@@ -87,7 +87,7 @@ export class VSCobScanner {
         });
 
         let percent = 0;
-        child.on('message', (msg) => {
+        child.on("message", (msg) => {
             timer.refresh();        // restart timer
             const message = msg as string;
             if (message.startsWith("@@")) {
@@ -194,7 +194,7 @@ export class VSCobScanner {
 
         sf.parse_copybooks_for_references = settings.parse_copybooks_for_references;
         sf.Files = files;
-        sf.cache_metadata_show_progress_messages = settings.cache_metadata_show_progress_messages;
+        sf.cache_metadata_verbose_messages = settings.cache_metadata_verbose_messages;
         sf.md_symbols = settings.metadata_symbols;
         sf.md_entrypoints = settings.metadata_entrypoints;
         sf.md_metadata_files = settings.metadata_files;
@@ -202,7 +202,7 @@ export class VSCobScanner {
 
         if (ws !== undefined) {
             for (const f of ws) {
-                if (f !== undefined && f.uri.scheme === 'file') {
+                if (f !== undefined && f.uri.scheme === "file") {
                     sf.workspaceFolders.push(f.uri.fsPath);
                 }
             }
@@ -215,7 +215,7 @@ export class VSCobScanner {
 
         const msgViaCommand = "(" + (viaCommand ? "on demand" : "startup") + ")";
         const settings = VSCOBOLConfiguration.get();
-      
+
         const ws = getVSWorkspaceFolders();
         const stats = new FileScanStats();
         const files: string[] = [];

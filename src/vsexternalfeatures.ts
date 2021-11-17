@@ -1,16 +1,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-import { FileType, Uri, workspace } from "vscode";
 import { VSLogger } from "./vslogger";
 import { ESourceFormat, IExternalFeatures } from "./externalfeatures";
 import { ICOBOLSettings } from "./iconfiguration";
-import ISourceHandler from "./isourcehandler";
+import { ISourceHandler } from "./isourcehandler";
 import { COBOLCopyBookProvider } from "./opencopybook";
 import { getVSCOBOLSourceFormat } from "./sourceformat";
-import { VSExtensionUtils } from "./extension";
 import { VSCOBOLFileUtils } from "./vsfileutils";
 
-export class VSExternalFeatures implements IExternalFeatures {
+import fs from "fs";
+import { COBOLFileUtils } from "./fileutils";
+import { getVSWorkspaceFolders } from "./cobolfolders";
+
+class VSExternalFeaturesImpl implements IExternalFeatures {
     public logMessage(message: string): void {
         VSLogger.logMessage(message);
     }
@@ -25,11 +27,11 @@ export class VSExternalFeatures implements IExternalFeatures {
     }
 
     public performance_now(): number {
-        return VSExtensionUtils.performance_now();
+        return Date.now();
     }
 
     public expandLogicalCopyBookToFilenameOrEmpty(filename: string, inDirectory: string, config: ICOBOLSettings): string {
-        return COBOLCopyBookProvider.expandLogicalCopyBookToFilenameOrEmpty(filename, inDirectory, config);
+        return COBOLCopyBookProvider.expandLogicalCopyBookOrEmpty(filename, inDirectory, config, this);
     }
 
     public getCOBOLSourceFormat(doc: ISourceHandler, config: ICOBOLSettings): ESourceFormat {
@@ -37,7 +39,7 @@ export class VSExternalFeatures implements IExternalFeatures {
     }
 
     public getFullWorkspaceFilename(sdir: string, sdirMs: BigInt): string | undefined {
-        return VSCOBOLFileUtils.getFullWorkspaceFilename(sdir, sdirMs);
+        return VSCOBOLFileUtils.getFullWorkspaceFilename(this, sdir, sdirMs);
     }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -46,19 +48,66 @@ export class VSExternalFeatures implements IExternalFeatures {
     }
 
     public getWorkspaceFolders(): string[] {
-        return [];
+        const folders = getVSWorkspaceFolders();
+        if (folders === undefined) {
+            return [];
+        }
+        const foldersArray: string[] = [];
+        for (const folder of folders) {
+            foldersArray.push(folder.uri.fsPath);
+        }
+
+        return foldersArray;
     }
 
     public isDirectory(possibleDirectory: string): boolean {
+        return COBOLFileUtils.isDirectory(possibleDirectory);
+    }
+
+    public isFile(possibleFilename: string): boolean {
         try {
-            async () => {
-                const stat = await workspace.fs.stat(Uri.file(possibleDirectory));
-                return stat.type === FileType.Directory;
+            if (fs.existsSync(possibleFilename)) {
+                // not on windows, do extra check for +x perms (protects exe & dirs)
+                // if (!COBOLFileUtils.isWin32) {
+                //     try {
+                //         fs.accessSync(sdir, fs.constants.F_OK | fs.constants.X_OK);
+                //         return false;
+                //     }
+                //     catch {
+                //         return true;
+                //     }
+                // }
+
+                return true;
             }
-        } catch {
+        }
+        catch {
             return false;
         }
-
         return false;
     }
+
+
+    private fileSearchDirectory: string[] = [];
+
+    public getFileModTimeStamp(filename: string): BigInt {
+        try {
+            const f = fs.statSync(filename, { bigint: true });
+            return (BigInt)(f.mtimeMs);
+        } catch (e) {
+            //
+        }
+
+        return (BigInt)(0);
+    }
+
+    public getCombinedCopyBookSearchPath(): string[] {
+        return this.fileSearchDirectory;
+    }
+
+    public setCombinedCopyBookSearchPath(fileSearchDirectory: string[]): void {
+        this.fileSearchDirectory = fileSearchDirectory;
+    }
 }
+
+export const VSExternalFeatures = new VSExternalFeaturesImpl();

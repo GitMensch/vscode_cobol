@@ -1,35 +1,21 @@
-import { parentPort, workerData } from 'worker_threads';
-import { Scanner, workerThreadData } from './cobscanner';
-import { ScanStats } from './cobscannerdata';
-import { ESourceFormat, IExternalFeatures } from './externalfeatures';
+import { parentPort, workerData } from "worker_threads";
+import { Scanner, workerThreadData } from "./cobscanner";
+import { ScanStats } from "./cobscannerdata";
+import { ESourceFormat, IExternalFeatures } from "./externalfeatures";
 
-import * as fs from 'fs';
-import * as path from 'path';
-import util from 'util';
-import ISourceHandler from './isourcehandler';
-import { ICOBOLSettings } from './iconfiguration';
-import { ICOBOLSourceScannerEventer } from './cobolsourcescanner';
-import { COBOLFileUtils } from './fileutils';
-import { getVSCOBOLSourceFormat } from './sourceformat';
-
-// class WorkerUtils {
-//     public static msleep(n: number) {
-//         Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, n);
-//     }
-
-//     public static sleep(n: number) {
-//         WorkerUtils.msleep(n * 1000);
-//     }
-// }
+import * as fs from "fs";
+import * as path from "path";
+import util from "util";
+import { ISourceHandler } from "./isourcehandler";
+import { ICOBOLSettings } from "./iconfiguration";
+import { ICOBOLSourceScannerEventer } from "./cobolsourcescanner";
+import { COBOLFileUtils } from "./fileutils";
+import { getVSCOBOLSourceFormat } from "./sourceformat";
 
 export class ThreadConsoleExternalFeatures implements IExternalFeatures {
     public static readonly Default = new ThreadConsoleExternalFeatures();
 
     public workspaceFolders: string[] = [];
-
-    private static isFile(sdir: string): boolean {
-        return COBOLFileUtils.isFile(sdir);
-    }
 
     public logMessage(message: string): void {
         if (parentPort !== null) {
@@ -94,7 +80,7 @@ export class ThreadConsoleExternalFeatures implements IExternalFeatures {
     public getFullWorkspaceFilename(sdir: string, sdirMs: BigInt): string | undefined {
         for (const folder of this.workspaceFolders) {
             const possibleFile = path.join(folder, sdir);
-            if (ThreadConsoleExternalFeatures.isFile(possibleFile)) {
+            if (this.isFile(possibleFile)) {
                 const stat4src = fs.statSync(possibleFile, { bigint: true });
                 if (sdirMs === stat4src.mtimeMs) {
                     return possibleFile;
@@ -105,8 +91,51 @@ export class ThreadConsoleExternalFeatures implements IExternalFeatures {
         return undefined;
     }
 
+    public isFile(possibleFilename:string): boolean {
+        try {
+            if (fs.existsSync(possibleFilename)) {
+                // not on windows, do extra check for +x perms (protects exe & dirs)
+                // if (!COBOLFileUtils.isWin32) {
+                //     try {
+                //         fs.accessSync(sdir, fs.constants.F_OK | fs.constants.X_OK);
+                //         return false;
+                //     }
+                //     catch {
+                //         return true;
+                //     }
+                // }
+
+                return true;
+            }
+        }
+        catch {
+            return false;
+        }
+        return false;
+    }
+
     public isDirectory(possibleDirectory: string) : boolean {
         return COBOLFileUtils.isDirectory(possibleDirectory);
+    }
+
+    public getFileModTimeStamp(filename: string):BigInt {
+        try {
+            return (BigInt)(fs.statSync(filename, {bigint: true }).mtimeMs);
+        } catch {
+            //
+        }
+
+        return (BigInt)(0);
+    }
+
+    private fileSearchDirectory: string[] = [];
+    
+    public getCombinedCopyBookSearchPath(): string[] {
+        return this.fileSearchDirectory;
+    }
+
+    public setCombinedCopyBookSearchPath(fileSearchDirectory: string[]):void {
+        this.fileSearchDirectory = fileSearchDirectory;
     }
 }
 

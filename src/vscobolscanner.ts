@@ -1,19 +1,17 @@
 import { VSCodeSourceHandler } from "./vscodesourcehandler";
-import { TextDocument, Uri, debug } from 'vscode';
-import COBOLSourceScanner, { COBOLToken, COBOLTokenStyle, EmptyCOBOLSourceScannerEventHandler, ICOBOLSourceScanner, ICOBOLSourceScannerEvents, SharedSourceReferences } from "./cobolsourcescanner";
+import { TextDocument, Uri, debug } from "vscode";
+import { COBOLSourceScanner, COBOLToken, COBOLTokenStyle, EmptyCOBOLSourceScannerEventHandler, ICOBOLSourceScanner, ICOBOLSourceScannerEvents, SharedSourceReferences } from "./cobolsourcescanner";
 import { InMemoryGlobalCacheHelper, InMemoryGlobalSymbolCache } from "./globalcachehelper";
 
 import { VSLogger } from "./vslogger";
 import { ICOBOLSettings } from "./iconfiguration";
-import { COBOLSymbolTableHelper } from "./cobolglobalcache_file";
 import { COBOLSymbolTable } from "./cobolglobalcache";
-import { CacheDirectoryStrategy } from "./externalfeatures";
 import { COBOLUtils } from "./cobolutils";
 import { ScanStats } from "./cobscannerdata";
 import { COBOLWorkspaceSymbolCacheHelper, TypeCategory } from "./cobolworkspacecache";
 import { VSPreProc } from "./vspreproc";
-import { VSCobScanner_depreciated } from './vscobscanner_depreciated';
-import { ExternalFeatures, VSExtensionUtils } from './extension';
+
+import { VSExternalFeatures } from "./vsexternalfeatures";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const InMemoryCache: Map<string, COBOLSourceScanner> = new Map<string, COBOLSourceScanner>();
@@ -28,7 +26,6 @@ export class VSScanStats extends ScanStats {
 }
 
 export class COBOLSymbolTableGlobalEventHelper implements ICOBOLSourceScannerEvents {
-    private qp: ICOBOLSourceScanner | undefined;
     private st: COBOLSymbolTable | undefined;
     private config: ICOBOLSettings;
 
@@ -38,7 +35,6 @@ export class COBOLSymbolTableGlobalEventHelper implements ICOBOLSourceScannerEve
     }
 
     public start(qp: ICOBOLSourceScanner): void {
-        this.qp = qp;
         this.st = new COBOLSymbolTable();
         this.st.fileName = qp.filename;
         this.st.lastModifiedTime = qp.lastModifiedTime;
@@ -97,16 +93,11 @@ export class COBOLSymbolTableGlobalEventHelper implements ICOBOLSourceScannerEve
     }
 
     public finish(): void {
-        if (this.config.cache_metadata !== CacheDirectoryStrategy.Off &&
-            this.qp !== undefined &&
-            this.st !== undefined) {
-            COBOLSymbolTableHelper.saveToFile(this.qp.deprecatedCacheDirectory, this.st);
-        }
         COBOLUtils.saveGlobalCacheToWorkspace(this.config);
     }
 }
 
-export default class VSCOBOLSourceScanner {
+export class VSCOBOLSourceScanner {
     private static readonly MAX_MEM_CACHE_SIZE = 30;
 
     public static removeCachedObject(document: TextDocument, config: ICOBOLSettings): void {
@@ -160,21 +151,19 @@ export default class VSCOBOLSourceScanner {
                         if (await VSPreProc.registerPreProcessors(config) === false) {
                             return undefined;
                         }
+                        return undefined;
                     };
                 }
 
-                const cacheDirectory: string | undefined = VSCobScanner_depreciated.getDeprecatedCacheDirectory();
-                const startTime = VSExtensionUtils.performance_now();
+                const startTime = VSExternalFeatures.performance_now();
                 const sourceHandler = new VSCodeSourceHandler(document, false);
                 const cacheData = sourceHandler.getIsSourceInWorkSpace();
-
-                const qcpd = new COBOLSourceScanner(sourceHandler, config,
-                    cacheDirectory === undefined ? "" : cacheDirectory, new SharedSourceReferences(config, true),
+                const qcpd = new COBOLSourceScanner(sourceHandler, config, new SharedSourceReferences(config, true),
                     config.parse_copybooks_for_references,
                     cacheData ? new COBOLSymbolTableGlobalEventHelper(config) : EmptyCOBOLSourceScannerEventHandler.Default,
-                    ExternalFeatures);
+                    VSExternalFeatures);
 
-                VSLogger.logTimedMessage(VSExtensionUtils.performance_now() - startTime, " - Parsing " + fileName);
+                VSLogger.logTimedMessage(VSExternalFeatures.performance_now() - startTime, " - Parsing " + fileName);
 
                 if (InMemoryCache.size > VSCOBOLSourceScanner.MAX_MEM_CACHE_SIZE) {
                     // drop the smallest..

@@ -1,18 +1,26 @@
-import * as vscode from 'vscode';
+import * as vscode from "vscode";
 
-import { VSCOBOLConfiguration } from './vsconfiguration';
-import { COBOLGlobalSymbolTable } from './cobolglobalcache';
-import { COBOLCopyBookProvider } from './opencopybook';
-import { InMemoryGlobalSymbolCache } from './globalcachehelper';
+import { VSCOBOLConfiguration } from "./vsconfiguration";
+import { COBOLGlobalSymbolTable } from "./cobolglobalcache";
+import { COBOLCopyBookProvider } from "./opencopybook";
+import { InMemoryGlobalSymbolCache } from "./globalcachehelper";
+import { IExternalFeatures } from "./externalfeatures";
 
 export class COBOLCallTargetProvider implements vscode.DefinitionProvider {
+
+    private features: IExternalFeatures;
+
+    constructor(features: IExternalFeatures) {
+        this.features = features;
+    }
+
     public provideDefinition(document: vscode.TextDocument,
         position: vscode.Position,
         token: vscode.CancellationToken): vscode.ProviderResult<vscode.Definition> {
         return this.resolveDefinitions(document, position, token);
     }
 
-    readonly callRegEx = new RegExp('[0-9a-zA-Z][a-zA-Z0-9-_]*');
+    readonly callRegEx = new RegExp("[0-9a-zA-Z][a-zA-Z0-9-_]*");
     // readonly enableUrlOpenBodge = false;
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -24,7 +32,7 @@ export class COBOLCallTargetProvider implements vscode.DefinitionProvider {
 
         if (theline.match(/.*(call|cancel|chain).*$/i)) {
             const wordRange = document.getWordRangeAtPosition(position, this.callRegEx);
-            const word = wordRange ? document.getText(wordRange) : '';
+            const word = wordRange ? document.getText(wordRange) : "";
             if (word !== "") {
                 const img: COBOLGlobalSymbolTable = InMemoryGlobalSymbolCache;
                 const wordLower = word.toLowerCase();
@@ -42,7 +50,7 @@ export class COBOLCallTargetProvider implements vscode.DefinitionProvider {
                         for (let i = 0; i < symbols.length; i++) {
                             const symbol = symbols[i];
                             if (symbol !== undefined && symbol.filename !== undefined && symbol.lnum !== undefined) {
-                                const fullFilename = COBOLCopyBookProvider.expandLogicalCopyBookToFilenameOrEmpty(symbol.filename, "", config);
+                                const fullFilename = COBOLCopyBookProvider.expandLogicalCopyBookOrEmpty(symbol.filename, "", config, this.features);
                                 if (fullFilename.length !== 0) {
                                     this.getLocationGivenFile(fullFilename, symbol.lnum, locations);
                                 }
@@ -57,7 +65,7 @@ export class COBOLCallTargetProvider implements vscode.DefinitionProvider {
                         for (let i = 0; i < symbols.length; i++) {
                             const symbol = symbols[i];
                             if (symbol !== undefined && symbol.filename !== undefined && symbol.lnum !== undefined) {
-                                const fullFilename = COBOLCopyBookProvider.expandLogicalCopyBookToFilenameOrEmpty(symbol.filename, "", config);
+                                const fullFilename = COBOLCopyBookProvider.expandLogicalCopyBookOrEmpty(symbol.filename, "", config, this.features);
                                 if (fullFilename.length !== 0) {
                                     this.getLocationGivenFile(fullFilename, symbol.lnum, locations);
                                 }

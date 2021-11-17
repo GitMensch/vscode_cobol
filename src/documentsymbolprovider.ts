@@ -1,10 +1,10 @@
-import * as vscode from 'vscode';
-import { COBOLToken, COBOLTokenStyle } from './cobolsourcescanner';
-import { VSCOBOLConfiguration } from './vsconfiguration';
-import { VSLogger } from './vslogger';
-import { outlineFlag } from './iconfiguration';
-import VSCOBOLSourceScanner from './vscobolscanner';
-import { VSPreProc } from './vspreproc';
+import * as vscode from "vscode";
+import { COBOLToken, COBOLTokenStyle } from "./cobolsourcescanner";
+import { VSCOBOLConfiguration } from "./vsconfiguration";
+import { VSLogger } from "./vslogger";
+import { outlineFlag } from "./iconfiguration";
+import { VSCOBOLSourceScanner } from "./vscobolscanner";
+import { VSPreProc } from "./vspreproc";
 
 class SimpleStack<T> {
     _store: T[] = [];
@@ -46,7 +46,6 @@ class COBOLDocumentSymbols {
 }
 
 class ProgramSymbols extends COBOLDocumentSymbols {
-    private symCount = 0;
     private divCount = 0;
 
     private currentDivisionSymbols: vscode.DocumentSymbol[] | undefined;
@@ -65,7 +64,6 @@ class ProgramSymbols extends COBOLDocumentSymbols {
             this.currentDivisionSymbols?.push(currentDivisionSymbol);
         }
         this.divCount++;
-        this.symCount++;
 
         this.currentSectionSymbols = undefined;
 
@@ -76,7 +74,6 @@ class ProgramSymbols extends COBOLDocumentSymbols {
 
     public addSection(token: COBOLToken) {
         this.divCount++;
-        this.symCount++;
 
         const sym = super.newDocumentSymbol(token, vscode.SymbolKind.Method, false);
 
@@ -85,7 +82,6 @@ class ProgramSymbols extends COBOLDocumentSymbols {
     }
 
     public addParagraph(token: COBOLToken) {
-        this.symCount++;
 
         const sym = super.newDocumentSymbol(token, vscode.SymbolKind.Method, false);
         if (this.currentSectionSymbols !== undefined) {
@@ -126,7 +122,7 @@ class ProgramSymbols extends COBOLDocumentSymbols {
     }
 
     private addRawVariable(token: COBOLToken, symbol: vscode.DocumentSymbol): void {
-        if (this.currentGroup !== undefined && token.extraInformation1.substr(0, 2) !== '01') {
+        if (this.currentGroup !== undefined && token.extraInformation1.substr(0, 2) !== "01") {
             VSLogger.logMessage(` addRawVariable: ${this.currentGroup?.name} -> ${token.tokenName} -> ${token.extraInformation1}`);
             this.currentGroup?.children.push(symbol);
             return;
@@ -182,7 +178,7 @@ class ProgramSymbols extends COBOLDocumentSymbols {
             if (parent !== undefined) {
                 VSLogger.logMessage(` Addgroup: parent name, ${parent.name}`);
                 parent.children.push(addSymbol);
-                VSLogger.logMessage(`\n`);
+                VSLogger.logMessage("\n");
                 // VSLogger.logMessage(`Addgroup: same level, ${this.currentGroup.name}@${this.currentGroupLevel}\n`);
             }
             return;
@@ -207,8 +203,8 @@ class ProgramSymbols extends COBOLDocumentSymbols {
             return;
         }
 
-        if (token.extraInformation1 === 'fd' || token.extraInformation1 === 'sd'
-            || token.extraInformation1 === 'rd' || token.extraInformation1 === 'select') {
+        if (token.extraInformation1 === "fd" || token.extraInformation1 === "sd"
+            || token.extraInformation1 === "rd" || token.extraInformation1 === "select") {
             const sym = super.newDocumentSymbol(token, vscode.SymbolKind.File, false);
             this.addRawVariable(token, sym);
             return;
@@ -216,7 +212,7 @@ class ProgramSymbols extends COBOLDocumentSymbols {
 
         let addSymbol: vscode.DocumentSymbol;
 
-        const firstTwo = Number(token.extraInformation1.substr(0, 2).replace(/^0+/, ''));
+        const firstTwo = Number(token.extraInformation1.substr(0, 2).replace(/^0+/, ""));
         if (firstTwo === 1 || firstTwo === 77 || firstTwo === 88 || firstTwo === 66) {
             this.currentGroup = undefined;
         }
@@ -243,13 +239,6 @@ class ProgramSymbols extends COBOLDocumentSymbols {
 }
 
 export class CobolDocumentSymbolProvider implements vscode.DocumentSymbolProvider {
-
-    private getDocumentSymbol(token: COBOLToken, symKind: vscode.SymbolKind): vscode.DocumentSymbol {
-        const srange = new vscode.Range(new vscode.Position(token.startLine, token.startColumn),
-            new vscode.Position(token.endLine, token.endColumn));
-
-        return new vscode.DocumentSymbol(token.tokenName, token.description, symKind, srange, srange);
-    }
 
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     public async provideDocumentSymbols(document: vscode.TextDocument, canceltoken: vscode.CancellationToken): Promise<vscode.DocumentSymbol[]> {

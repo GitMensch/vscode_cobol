@@ -1,11 +1,10 @@
 import path from "path";
 import fs from "fs";
 import { getVSWorkspaceFolders } from "./cobolfolders";
-import { COBOLFileUtils } from "./fileutils";
-import { workspace } from "vscode";
+import { Range, TextEditor, window, workspace } from "vscode";
 
 import { ICOBOLSettings } from "./iconfiguration";
-import { VSExtensionUtils } from "./extension";
+import { IExternalFeatures } from "./externalfeatures";
 
 export class VSCOBOLFileUtils {
 
@@ -25,18 +24,18 @@ export class VSCOBOLFileUtils {
         return false;
     }
 
-    public static getFullWorkspaceFilename(sdir: string, sdirMs: BigInt): string | undefined {
+    public static getFullWorkspaceFilename(features: IExternalFeatures, sdir: string, sdirMs: BigInt): string | undefined {
         const ws = getVSWorkspaceFolders();
         if (workspace === undefined || ws === undefined) {
             return undefined;
         }
         for (const folder of ws) {
-            if (folder.uri.scheme === 'file') {
+            if (folder.uri.scheme === "file") {
                 const folderPath = folder.uri.path;
                 const possibleFile = path.join(folderPath, sdir);
-                if (COBOLFileUtils.isFile(possibleFile)) {
-                    const stat4src = fs.statSync(possibleFile, { bigint: true });
-                    if (sdirMs === stat4src.mtimeMs) {
+                if (features.isFile(possibleFile)) {
+                    const stat4srcMs = features.getFileModTimeStamp(possibleFile);
+                    if (sdirMs === stat4srcMs) {
                         return possibleFile;
                     }
                 }
@@ -55,7 +54,7 @@ export class VSCOBOLFileUtils {
         const fullPath = path.normalize(ddir);
         let bestShortName = "";
         for (const folder of ws) {
-            if (folder.uri.scheme === 'file') {
+            if (folder.uri.scheme === "file") {
                 const folderPath = folder.uri.path;
                 if (fullPath.startsWith(folderPath)) {
                     const possibleShortPath = fullPath.substr(1 + folderPath.length);
@@ -73,18 +72,18 @@ export class VSCOBOLFileUtils {
         return bestShortName.length === 0 ? undefined : bestShortName;
     }
 
-    public static findCopyBook(filename: string, config: ICOBOLSettings): string {
+    public static findCopyBook(filename: string, config: ICOBOLSettings, features: IExternalFeatures): string {
         if (!filename) {
             return "";
         }
 
         const hasDot = filename.indexOf(".");
 
-        for (const copybookdir of VSExtensionUtils.getCombinedCopyBookSearchPath()) {
+        for (const copybookdir of features.getCombinedCopyBookSearchPath()) {
 
             /* check for the file as is.. */
             const firstPossibleFile = path.join(copybookdir, filename);
-            if (COBOLFileUtils.isFile(firstPossibleFile)) {
+            if (features.isFile(firstPossibleFile)) {
                 return firstPossibleFile;
             }
 
@@ -94,7 +93,7 @@ export class VSCOBOLFileUtils {
                 for (const ext of config.copybookexts) {
                     const possibleFile = path.join(copybookdir, filename + "." + ext);
 
-                    if (COBOLFileUtils.isFile(possibleFile)) {
+                    if (features.isFile(possibleFile)) {
                         return possibleFile;
                     }
                 }
@@ -104,19 +103,19 @@ export class VSCOBOLFileUtils {
         return "";
     }
 
-    public static findCopyBookInDirectory(filename: string, inDirectory: string, config: ICOBOLSettings): string {
+    public static findCopyBookInDirectory(filename: string, inDirectory: string, config: ICOBOLSettings, features: IExternalFeatures): string {
         if (!filename) {
             return "";
         }
 
         const hasDot = filename.indexOf(".");
 
-        for (const baseCopybookdir of VSExtensionUtils.getCombinedCopyBookSearchPath()) {
+        for (const baseCopybookdir of features.getCombinedCopyBookSearchPath()) {
             const copybookdir = path.join(baseCopybookdir, inDirectory);
 
             /* check for the file as is.. */
             const firstPossibleFile = path.join(copybookdir, filename);
-            if (COBOLFileUtils.isFile(firstPossibleFile)) {
+            if (features.isFile(firstPossibleFile)) {
                 return firstPossibleFile;
             }
 
@@ -126,7 +125,7 @@ export class VSCOBOLFileUtils {
                 for (const ext of config.copybookexts) {
                     const possibleFile = path.join(copybookdir, filename + "." + ext);
 
-                    if (COBOLFileUtils.isFile(possibleFile)) {
+                    if (features.isFile(possibleFile)) {
                         return possibleFile;
                     }
                 }
@@ -136,4 +135,39 @@ export class VSCOBOLFileUtils {
 
         return "";
     }
+
+    public static extractSelectionToCopybook(activeTextEditor: TextEditor, features: IExternalFeatures): void {
+        const sel = activeTextEditor.selection;
+
+        const ran = new Range(sel.start, sel.end);
+        const text = activeTextEditor.document.getText(ran);
+        const dir = path.dirname(activeTextEditor.document.fileName);
+
+        window.showInputBox({
+            prompt: "Copybook name?",
+            validateInput: (copybook_filename: string): string | undefined => {
+                if (!copybook_filename || copybook_filename.indexOf(" ") !== -1 ||
+                    copybook_filename.indexOf(".") !== -1 ||
+                    features.isFile(path.join(dir, copybook_filename + ".cpy"))) {
+                    return "Invalid copybook";
+                } else {
+                    return undefined;
+                }
+            }
+        }).then(copybook_filename => {
+            // leave if we have no filename
+            if (copybook_filename === undefined) {
+                return;
+            }
+            const filename = path.join(dir, copybook_filename + ".cpy");
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            fs.writeFileSync(filename, text);
+            activeTextEditor.edit(edit => {
+                edit.replace(ran, "           copy \"" + copybook_filename + ".cpy\".");
+            });
+
+        });
+    }
+
 }
+

@@ -1,21 +1,20 @@
-import COBOLSourceScanner, { ICOBOLSourceScannerEventer, SharedSourceReferences } from "./cobolsourcescanner";
+import { COBOLSourceScanner, ICOBOLSourceScannerEventer, SharedSourceReferences } from "./cobolsourcescanner";
 import { COBOLSymbolTableEventHelper } from "./cobolsymboltableeventhelper";
 import { COBSCANNER_STATUS, ScanData, ScanDataHelper, ScanStats } from "./cobscannerdata";
 import { ConsoleExternalFeatures } from "./consoleexternalfeatures";
 
-import * as crypto from 'crypto';
-import * as fs from 'fs';
-import * as os from 'os';
+import * as crypto from "crypto";
+import * as fs from "fs";
+import * as os from "os";
 import { Hash } from "crypto";
 import path from "path";
-import { Worker } from 'worker_threads';
+import { Worker } from "worker_threads";
 
 import { COBOLWorkspaceSymbolCacheHelper } from "./cobolworkspacecache";
 import { InMemoryGlobalSymbolCache } from "./globalcachehelper";
 import { FileSourceHandler } from "./filesourcehandler";
 import { COBOLSettings, ICOBOLSettings } from "./iconfiguration";
 import { IExternalFeatures } from "./externalfeatures";
-import { COBOLFileUtils } from "./fileutils";
 
 const args = process.argv.slice(2);
 const settings: ICOBOLSettings = new COBOLSettings();
@@ -31,40 +30,26 @@ class Utils {
         Utils.msleep(n * 1000);
     }
 
-
-
     public static getHashForFilename(filename: string) {
-        const hash: Hash = crypto.createHash('sha256');
+        const hash: Hash = crypto.createHash("sha256");
         hash.update(filename);
-        return hash.digest('hex');
+        return hash.digest("hex");
     }
 
-    public static cacheUpdateRequired(cacheDirectory: string, nfilename: string, features: IExternalFeatures): boolean {
+    public static cacheUpdateRequired(nfilename: string, features: IExternalFeatures): boolean {
         const filename = path.normalize(nfilename);
 
         const cachedMtimeWS = InMemoryGlobalSymbolCache.sourceFilenameModified.get(filename);
         const cachedMtime = cachedMtimeWS?.lastModifiedTime;
         if (cachedMtime !== undefined) {
-            const stat4src = fs.statSync(filename, { bigint: true });
-            if (cachedMtime < stat4src.mtimeMs) {
-                features.logMessage(`cacheUpdateRequired : ${nfilename}, cachedMtime=${cachedMtime} < ${stat4src.mtimeMs}`);
+            const stat4srcMs =features.getFileModTimeStamp(filename);
+            if (cachedMtime < stat4srcMs) {
+                features.logMessage(`cacheUpdateRequired : ${nfilename}, cachedMtime=${cachedMtime} < ${stat4srcMs}`);
                 return true;
             }
             return false;
         }
 
-        if (cacheDirectory !== null && cacheDirectory.length !== 0) {
-            const fn: string = path.join(cacheDirectory, this.getHashForFilename(filename) + ".sym");
-            const fnStat = COBOLFileUtils.isFileT(fn);
-            if (fnStat[0]) {
-                const stat4cache = fnStat[1];
-                const stat4src = fs.statSync(filename, { bigint: true });
-                if (stat4cache !== undefined && stat4cache.mtimeMs < stat4src.mtimeMs) {
-                    return true;
-                }
-                return false;
-            }
-        }
         return true;
     }
 
@@ -72,7 +57,7 @@ class Utils {
         if (!process.env.BROWSER) {
             try {
                 // eslint-disable-next-line @typescript-eslint/no-var-requires
-                return require('performance-now').performance.now;
+                return require("performance-now").performance.now;
             }
             catch {
                 return Date.now();
@@ -99,7 +84,7 @@ export class Scanner {
 
         // may need more..
         settings.parse_copybooks_for_references = scanData.parse_copybooks_for_references;
-        settings.cache_metadata_show_progress_messages = scanData.cache_metadata_show_progress_messages;
+        settings.cache_metadata_verbose_messages = scanData.cache_metadata_verbose_messages;
 
         // TODO: add in other metadata items
         COBOLWorkspaceSymbolCacheHelper.loadGlobalCacheFromArray(settings, scanData.md_symbols, true);
@@ -138,7 +123,7 @@ export class Scanner {
         if (stats.entryPointsDefined !== 0) {
             features.logMessage(` Entry-Point Count     : ${stats.entryPointsDefined}`);
         }
-        const completedMessage = (aborted ? `Scan aborted (elapsed time ${stats.endTime})` : 'Scan completed');
+        const completedMessage = (aborted ? `Scan aborted (elapsed time ${stats.endTime})` : "Scan completed");
         if (features.logTimedMessage(stats.endTime, completedMessage) === false) {
             features.logMessage(completedMessage);
         }
@@ -159,14 +144,12 @@ export class Scanner {
         try {
             let fSendCount = 0;
             for (const file of scanData.Files) {
-                const cacheDir = scanData.cacheDirectory;
-
-                if (Utils.cacheUpdateRequired(cacheDir, file, features)) {
-                    const filesHandler = new FileSourceHandler(file);
+                if (Utils.cacheUpdateRequired(file, features)) {
+                    const filesHandler = new FileSourceHandler(file, features);
                     const config = new COBOLSettings();
                     config.parse_copybooks_for_references = scanData.parse_copybooks_for_references;
                     const symbolCatcher = new COBOLSymbolTableEventHelper(config, sender);
-                    const qcp = new COBOLSourceScanner(filesHandler, config, cacheDir, new SharedSourceReferences(config, true), config.parse_copybooks_for_references, symbolCatcher, features);
+                    const qcp = new COBOLSourceScanner(filesHandler, config, new SharedSourceReferences(config, true), config.parse_copybooks_for_references, symbolCatcher, features);
                     if (qcp.callTargets.size > 0) {
                         stats.programsDefined++;
                         if (qcp.callTargets !== undefined) {
@@ -174,7 +157,7 @@ export class Scanner {
                         }
                     }
 
-                    if (scanData.cache_metadata_show_progress_messages) {
+                    if (scanData.cache_metadata_verbose_messages) {
                         features.logMessage(`  Parse completed: ${file}`);
                     }
                     stats.filesScanned++;
@@ -234,7 +217,7 @@ for (const arg of args) {
     }
     else {
         switch (argLower) {
-            case 'useenv': {
+            case "useenv": {
                 const features = ConsoleExternalFeatures.Default;
                 try {
                     const SCANDATA_ENV = process.env.SCANDATA;
@@ -247,7 +230,7 @@ for (const arg of args) {
                         Scanner.processFiles(scanData, features, processSender.Default, scanStats);
                         features.logMessage(`${COBSCANNER_STATUS} 100`);
                     } else {
-                        features.logMessage(`SCANDATA not found in environment`);
+                        features.logMessage("SCANDATA not found in environment");
                     }
                 }
                 catch (e) {
@@ -259,7 +242,7 @@ for (const arg of args) {
                 }
             }
                 break;
-            case 'useenv_threaded': {
+            case "useenv_threaded": {
                 const features = ConsoleExternalFeatures.Default;
                 try {
                     const SCANDATA_ENV = process.env.SCANDATA;

@@ -2,9 +2,9 @@ import { Extension, extensions } from "vscode";
 import { COBAPIConstants, COBOLPreprocessor } from "./cobapi";
 import { CobApiHandle } from "./cobapiimpl";
 import { COBOLPreprocessorHelper } from "./cobolsourcescanner";
-import { ExternalFeatures} from "./extension";
 import { VSLogger } from "./vslogger";
 import { ICOBOLSettings } from "./iconfiguration";
+import { VSExternalFeatures } from "./vsexternalfeatures";
 
 export class VSPreProc {
 
@@ -43,7 +43,7 @@ export class VSPreProc {
 
                 const pp = VSPreProc.getCOBOLPreprocessor(ppExt, extName);
                 if (pp !== undefined) {
-                    const handle = new CobApiHandle(pp.getPackageJson(), ExternalFeatures);
+                    const handle = new CobApiHandle(pp.getPackageJson(), VSExternalFeatures);
                     try {
                         if (pp.getImplementedVersion() !== COBAPIConstants.COB_API_INTERFACE_VERSION) {
                             failed = true;
@@ -79,11 +79,7 @@ export class VSPreProc {
 
         return !failed;
     }
-
-    private static msleep(n: number) {
-        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, n);
-    }
-
+    
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     private static getExtension(extensionName: string): Extension<any> | undefined {
         for (const x of extensions.all) {
@@ -125,9 +121,9 @@ export class VSPreProc {
                 }
                 continue;
             }
-            VSLogger.logMessage('');
+            VSLogger.logMessage("");
             VSLogger.logMessage(` Registered preprocessor          : ${extName}`);
-            VSLogger.logMessage('');
+            VSLogger.logMessage("");
         }
     }
 }

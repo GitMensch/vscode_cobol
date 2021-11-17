@@ -74,30 +74,10 @@ export class VSCOBOLSourceScannerTools {
 
     public static ignoreDirectory(partialName: string): boolean {
         // do not traverse into . directories
-        if (partialName.startsWith('.')) {
+        if (partialName.startsWith(".")) {
             return true;
         }
         return false;
-    }
-
-    public static getUserStorageDirectory(settings: ICOBOLSettings): string | undefined {
-        let str = settings.cache_metadata_user_directory;
-        if (str === null || str.length === 0) {
-            return undefined;
-        }
-
-        // if on Windows replace ${HOME} with ${USERPROFILE}
-        if (COBOLFileUtils.isWin32) {
-            // eslint-disable-next-line no-template-curly-in-string
-            str = str.replace(/\$\{HOME\}/, '${USERPROFILE}');
-        }
-
-        const replaced = str.replace(/\$\{([^%]+)\}/g, (_original, matched) => {
-            const r = process.env[matched];
-            return r ? r : '';
-        });
-
-        return replaced;
     }
 }
 
